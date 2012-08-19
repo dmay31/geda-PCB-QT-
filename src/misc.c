@@ -2226,6 +2226,7 @@ GetInfoString (void)
   if (first_time)
     {
       first_time = 0;
+      DSAddString (&info, "\n\n" "by Dale May\n\n");
       DSAddString (&info,
 	  _("This is PCB, an interactive\n"
 	    "printed circuit board editor\n"

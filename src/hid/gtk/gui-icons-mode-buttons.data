@@ -506,3 +506,39 @@ static char *via[] = {
 "ooooo ooo   o ooo ooo",
 "ooooooooooooooooooooo"
 };
+
+
+
+/* XPM */
+static char *teardrop[] = {
+/* columns rows colors chars-per-pixel */
+"21 21 4 1",
+"  c black",
+". c #7A8584",
+"X c gray100",
+"o c None",
+/* pixels */
+"ooooooooooooooooooooo",
+"ooooooooooooooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"oooooooooo oooooooooo",
+"ooooooooo. .ooooooooo",
+"oooooooo.   .oooooooo",
+"ooooooo .   . ooooooo",
+"ooooooo..ooo..ooooooo",
+"oooooo..ooooo..oooooo",
+"oooooo..ooooo..oooooo",
+"oooooo..ooooo..oooooo",
+"ooooooo..ooo..ooooooo",
+"oooooooo.....oooooooo",
+"ooooooooo...ooooooooo",
+"ooooooooooooooooooooo"
+
+
+};

@@ -326,6 +326,18 @@ static bool saved_mode = false;
 static bool mid_stroke = false;
 static BoxType StrokeBox;
 #endif
+
+#define MIN_LINE_LENGTH 700
+#define MAX_DISTANCE 700
+
+static int check_line_callback (const BoxType * box, void *cl);
+
+static PinType * pin;
+static int layer;
+static int px, py;
+
+static int new_arcs = 0;
+
 static FunctionType Functions[] = {
   {"AddSelected", F_AddSelected},
   {"All", F_All},
@@ -1764,6 +1776,36 @@ NotifyMode (void)
 	  break;
 	}
       break;
+      case TEARDROP:
+	     if((( type = SearchScreen (Note.X, Note.Y, PIN_TYPES, &ptr1, &ptr2,
+	  		    &ptr3)) != NO_TYPE))
+			    {
+	    	 	 PinType * 		found_pin;
+	    	 	 BoxType		srch_area;
+	    	 	 int			layer;
+
+	    	 	 printf("Do you want to add a tear drop?\n");
+	    	 	 found_pin = (PinType *)ptr1;
+	    	 	 printf("VIA bounding box %d:%d:%d:%d \n",found_pin->BoundingBox.X1,
+	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.X2,
+	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.Y1,
+	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.Y2 );
+
+	    	 	 pin = found_pin;
+	    	 	 px = found_pin->X;
+	    	 	 py = found_pin->Y;
+	    	 	 srch_area.X1 = px -10;
+	    	 	 srch_area.Y1 = py -10;
+	    	 	 srch_area.X2 = px +10;
+	    	 	 srch_area.Y2 = py +10;
+
+	    	 	 for( layer = 0; layer < max_copper_layer; layer++ )
+	    	 	     {
+	    	 		 LayerType *  l = &(PCB->Data->Layer[ layer ]);
+	    	 		 r_search (l->line_tree, &srch_area, NULL, check_line_callback, l);
+	    	 	     }
+			    }
+    	   break;
     }
 }
 
@@ -8215,3 +8257,144 @@ HID_Action action_action_list[] = {
 
 REGISTER_ACTIONS (action_action_list)
 
+
+int distance_between_points(int x1,int y1, int x2, int y2)
+{
+  int a;
+  int b;
+  int distance;
+  a = (x1-x2);
+  b = (y1-y2);
+  distance = sqrt((pow( x1 - x2, 2 )) + (pow( y1 - y2 , 2)));
+  return distance;
+}
+
+#pragma GCC OPTOMIZE OFF
+static int check_line_callback (const BoxType * box, void *cl)
+{
+  LayerType * lay = & PCB->Data->Layer[layer];
+  LineType * l = (LineType *) box;
+  int x1, x2, y1, y2;
+  double a, b, c, x, r, t;
+  double dx, dy, len;
+  double ax, ay, lx, ly, theta;
+  double ldist, adist, radius;
+  double vx, vy, vr, vl;
+  int delta, aoffset, count;
+  ArcType * arc;
+
+  /* if our line is to short ignore it */
+  if (distance_between_points(l->Point1.X,l->Point1.Y,l->Point2.X,l->Point2.Y) < MIN_LINE_LENGTH )
+    {
+      return 1;
+    }
+
+  if (distance_between_points(l->Point1.X,l->Point1.Y,px,py) < MAX_DISTANCE)
+    {
+      x1 = l->Point1.X;
+      y1 = l->Point1.Y;
+      x2 = l->Point2.X;
+      y2 = l->Point2.Y;
+    }
+  else if (distance_between_points(l->Point2.X,l->Point2.Y,px,py) < MAX_DISTANCE)
+    {
+      x1 = l->Point2.X;
+      y1 = l->Point2.Y;
+      x2 = l->Point1.X;
+      y2 = l->Point1.Y;
+    }
+  else
+    return 1;
+
+  r = pin->Thickness / 2.0;
+  t = l->Thickness / 2.0;
+
+  if (t > r)
+    return 1;
+
+  a = 1;
+  b = 4 * t - 2 * r;
+  c = 2 * t * t - r * r;
+
+  x = (-b + sqrt (b * b - 4 * a * c)) / (2 * a);
+
+  len = sqrt (((double)x2-x1)*(x2-x1) + ((double)y2-y1)*(y2-y1));
+
+  if (len > (x+t))
+    {
+      adist = ldist = x + t;
+      radius = x + t;
+      delta = 45;
+
+      if (radius < r || radius < t)
+	return 1;
+    }
+  else if (len > r + t)
+    {
+      /* special "short teardrop" code */
+
+      x = (len*len - r*r + t*t) / (2 * (r - t));
+      ldist = len;
+      adist = x + t;
+      radius = x + t;
+      delta = atan2 (len, x + t) * 180.0/M_PI;
+    }
+  else
+    return 1;
+
+  dx = ((double)x2 - x1) / len;
+  dy = ((double)y2 - y1) / len;
+  theta = atan2 (y2 - y1, x1 - x2) * 180.0/M_PI;
+
+  lx = px + dx * ldist;
+  ly = py + dy * ldist;
+
+  /* We need one up front to determine how many segments it will take
+     to fill.  */
+  ax = lx - dy * adist;
+  ay = ly + dx * adist;
+  vl = sqrt (r*r - t*t);
+  vx = px + dx * vl;
+  vy = py + dy * vl;
+  vx -= dy * t;
+  vy += dx * t;
+  vr = sqrt ((ax-vx) * (ax-vx) + (ay-vy) * (ay-vy));
+
+  aoffset = 0;
+  count = 0;
+  do {
+    if (++count > 5)
+      {
+	printf("a %d,%d v %d,%d adist %g radius %g vr %g\n",
+	       (int)ax, (int)ay, (int)vx, (int)vy, adist, radius, vr);
+	return 1;
+      }
+
+    ax = lx - dy * adist;
+    ay = ly + dx * adist;
+
+    arc = CreateNewArcOnLayer (lay, (int)ax, (int)ay, (int)radius, (int)radius,
+			       (int)theta+90+aoffset, delta-aoffset,
+			       l->Thickness, l->Clearance, l->Flags);
+    if (arc)
+      AddObjectToCreateUndoList (ARC_TYPE, lay, arc, arc);
+
+    ax = lx + dy * (x+t);
+    ay = ly - dx * (x+t);
+
+    arc = CreateNewArcOnLayer (lay, (int)ax, (int)ay, (int)radius, (int)radius,
+			       (int)theta-90-aoffset, -delta+aoffset,
+			       l->Thickness, l->Clearance, l->Flags);
+    if (arc)
+      AddObjectToCreateUndoList (ARC_TYPE, lay, arc, arc);
+
+    radius += t*1.9;
+    aoffset = acos ((double)adist / radius) * 180.0 / M_PI;
+
+    new_arcs ++;
+  } while (vr > radius - t);
+
+  return 1;
+}
+
+#pragma GCC OPTOMIZE ON

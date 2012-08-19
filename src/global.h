@@ -33,6 +33,8 @@
  * silkscreen layer. Perhaps the design is not the best.
  */
 
+#define NDEBUG
+
 #ifndef	PCB_GLOBAL_H
 #define	PCB_GLOBAL_H
 

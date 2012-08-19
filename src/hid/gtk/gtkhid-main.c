@@ -497,6 +497,54 @@ static GSourceFuncs ghid_block_hook_funcs = {
   NULL // No destroy notification
 };
 
+int
+ghid_confirm_dialog (char *msg, ...)
+{
+  int rv = 0;
+  va_list ap;
+  char *cancelmsg = NULL, *okmsg = NULL;
+  static gint x = -1, y = -1;
+  GtkWidget *dialog;
+  GHidPort *out = &ghid_port;
+
+  va_start (ap, msg);
+  cancelmsg = va_arg (ap, char *);
+  okmsg = va_arg (ap, char *);
+  va_end (ap);
+
+  if (!cancelmsg)
+    {
+      cancelmsg = _("_Cancel");
+      okmsg = _("_OK");
+    }
+
+  dialog = gtk_message_dialog_new (GTK_WINDOW (out->top_window),
+				   (GtkDialogFlags) (GTK_DIALOG_MODAL |
+						     GTK_DIALOG_DESTROY_WITH_PARENT),
+				   GTK_MESSAGE_QUESTION,
+				   GTK_BUTTONS_NONE,
+				   "%s", msg);
+  gtk_dialog_add_button (GTK_DIALOG (dialog),
+			  cancelmsg, GTK_RESPONSE_CANCEL);
+  if (okmsg)
+    {
+      gtk_dialog_add_button (GTK_DIALOG (dialog),
+			     okmsg, GTK_RESPONSE_OK);
+    }
+
+  if(x != -1) {
+  	gtk_window_move(GTK_WINDOW (dialog), x, y);
+  }
+
+  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_OK)
+    rv = 1;
+
+  gtk_window_get_position(GTK_WINDOW (dialog), &x, &y);
+
+  gtk_widget_destroy (dialog);
+  return rv;
+}
+
 static gboolean
 ghid_block_hook_prepare (GSource *source,
                          gint    *timeout)
@@ -543,54 +591,6 @@ ghid_stop_block_hook (hidval mlpoll)
 {
   GSource *source = (GSource *)mlpoll.ptr;
   g_source_destroy( source );
-}
-
-int
-ghid_confirm_dialog (char *msg, ...)
-{
-  int rv = 0;
-  va_list ap;
-  char *cancelmsg = NULL, *okmsg = NULL;
-  static gint x = -1, y = -1;
-  GtkWidget *dialog;
-  GHidPort *out = &ghid_port;
-
-  va_start (ap, msg);
-  cancelmsg = va_arg (ap, char *);
-  okmsg = va_arg (ap, char *);
-  va_end (ap);
-
-  if (!cancelmsg)
-    {
-      cancelmsg = _("_Cancel");
-      okmsg = _("_OK");
-    }
-
-  dialog = gtk_message_dialog_new (GTK_WINDOW (out->top_window),
-				   (GtkDialogFlags) (GTK_DIALOG_MODAL |
-						     GTK_DIALOG_DESTROY_WITH_PARENT),
-				   GTK_MESSAGE_QUESTION,
-				   GTK_BUTTONS_NONE,
-				   "%s", msg);
-  gtk_dialog_add_button (GTK_DIALOG (dialog), 
-			  cancelmsg, GTK_RESPONSE_CANCEL);
-  if (okmsg)
-    {
-      gtk_dialog_add_button (GTK_DIALOG (dialog), 
-			     okmsg, GTK_RESPONSE_OK);
-    }
-
-  if(x != -1) {
-  	gtk_window_move(GTK_WINDOW (dialog), x, y);
-  }
-
-  if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_OK)
-    rv = 1;
-
-  gtk_window_get_position(GTK_WINDOW (dialog), &x, &y);
-
-  gtk_widget_destroy (dialog);
-  return rv;
 }
 
 int

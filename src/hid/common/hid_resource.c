@@ -7,7 +7,7 @@
 #include "resource.h"
 #include "hid/common/hid_resource.h"
 
-/* #define DEBUG_HID_RESOURCE */
+#define DEBUG_HID_RESOURCE
 
 static int button_count;   // number of buttons we have actions for
 static int *button_nums;   // list of button numbers

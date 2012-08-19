@@ -3931,7 +3931,7 @@ static DumpStack()
   /*
    *	Run through the list displaying the oldest first.
    */
-  fprintf(Error,"\n\n");
+ // fprintf(Error,"\n\n");
   for (i = 0; i < TS_DEPTH; i += 1)
     if (TokenStack[(TSP + i) & TS_MASK]){
       /*
@@ -3941,20 +3941,20 @@ static DumpStack()
         nam = cxt->Name;
       else if (tok = FindToken(TokenType[(TSP + i) & TS_MASK]))
         nam = tok->Name;
-      else switch (TokenType[(TSP + i) & TS_MASK]){
-      	case IDENT:	nam = "IDENT";		break;
-      	case INT:	nam = "INT";		break;
-      	case KEYWORD:	nam = "KEYWORD";	break;
-      	case STR:	nam = "STR";		break;
-      	default:	nam = "?";		break;
-      }
+   //   else switch (TokenType[(TSP + i) & TS_MASK]){
+   //   	case IDENT:	nam = "IDENT";		break;
+   //   	case INT:	nam = "INT";		break;
+   //   	case KEYWORD:	nam = "KEYWORD";	break;
+   //   	case STR:	nam = "STR";		break;
+   //   	default:	nam = "?";		break;
+  //    }
       /*
        *	Now print the token state.
        */
-      fprintf(Error,"%2d %-16.16s '%s'\n",TS_DEPTH - i,nam,
-        TokenStack[(TSP + i) & TS_MASK]);
+ //     fprintf(Error,"%2d %-16.16s '%s'\n",TS_DEPTH - i,nam,
+ //       TokenStack[(TSP + i) & TS_MASK]);
     }
-  fprintf(Error,"\n");
+ // fprintf(Error,"\n");
 }
 #else
 #define	Stack(s,t)
@@ -3978,7 +3978,7 @@ static char CharBuf[IDENT_LENGTH + 1];	/* garbage buffer */
 static void yyerror(const char *ers)
 {
 #ifdef	DEBUG
-  DumpStack();
+ // DumpStack();
 #endif	/* DEBUG */
   fprintf(Error,"%s, line %ld: %s\n",InFile,LineNumber,ers);
 }

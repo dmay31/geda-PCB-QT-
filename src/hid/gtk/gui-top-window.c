@@ -964,7 +964,8 @@ static ModeButton mode_buttons[] = {
   {NULL, NULL, 0, 0, N_("insertPoint"), INSERTPOINT_MODE, ins},
   {NULL, NULL, 0, 0, N_("thermal"), THERMAL_MODE, thrm},
   {NULL, NULL, 0, 0, N_("select"), ARROW_MODE, sel},
-  {NULL, NULL, 0, 0, N_("lock"), LOCK_MODE, lock}
+  {NULL, NULL, 0, 0, N_("lock"), LOCK_MODE, lock},
+  {NULL, NULL, 0, 0, "teardrop", TEARDROP, teardrop}
 };
 
 static gint n_mode_buttons = G_N_ELEMENTS (mode_buttons);

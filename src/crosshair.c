@@ -850,7 +850,6 @@ check_snap_offgrid_line (struct snap_data *snap_data,
 
   if (ans == NO_TYPE)
     return;
-
   line = (LineType *)ptr2;
 
   /* Allow snapping to off-grid lines when drawing new lines (on
