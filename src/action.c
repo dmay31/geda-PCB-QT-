@@ -1784,13 +1784,8 @@ NotifyMode (void)
 	    	 	 BoxType		srch_area;
 	    	 	 int			layer;
 
-	    	 	 printf("Do you want to add a tear drop?\n");
 	    	 	 found_pin = (PinType *)ptr1;
-	    	 	 printf("VIA bounding box %d:%d:%d:%d \n",found_pin->BoundingBox.X1,
-	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.X2,
-	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.Y1,
-	    	 			 	 	 	 	 	 	 	   found_pin->BoundingBox.Y2 );
-
+	    	 	 found_pin->Teardrop = TRUE;
 	    	 	 pin = found_pin;
 	    	 	 px = found_pin->X;
 	    	 	 py = found_pin->Y;
@@ -8269,7 +8264,7 @@ int distance_between_points(int x1,int y1, int x2, int y2)
   return distance;
 }
 
-#pragma GCC OPTOMIZE OFF
+#pragma GCC OPTOMIZE ("-O0")
 static int check_line_callback (const BoxType * box, void *cl)
 {
   LayerType * lay = & PCB->Data->Layer[layer];
@@ -8282,6 +8277,10 @@ static int check_line_callback (const BoxType * box, void *cl)
   double vx, vy, vr, vl;
   int delta, aoffset, count;
   ArcType * arc;
+  printf("FOUND LINE %d:%d:%d:%d\n", l->BoundingBox.X1,
+		  	  	  	  	             l->BoundingBox.Y1,
+		  	  	  	  	             l->BoundingBox.X2,
+		  	  	  	  	             l->BoundingBox.Y2);
 
   /* if our line is to short ignore it */
   if (distance_between_points(l->Point1.X,l->Point1.Y,l->Point2.X,l->Point2.Y) < MIN_LINE_LENGTH )
@@ -8307,11 +8306,13 @@ static int check_line_callback (const BoxType * box, void *cl)
     return 1;
 
   r = pin->Thickness / 2.0;
-  t = l->Thickness / 2.0;
+  t = l->Thickness / 2.0 ;
 
   if (t > r)
     return 1;
+{
 
+};
   a = 1;
   b = 4 * t - 2 * r;
   c = 2 * t * t - r * r;

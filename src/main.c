@@ -399,8 +399,7 @@ print_defaults ()
   exit (1);
 }
 
-#define SSET(F,D,N,H) { N, H, \
-	HID_String,  0, 0, { 0, D, 0 }, 0, &Settings.F }
+#define SSET(F,D,N,H) { N, H, HID_String,  0, 0, { 0, D, 0 }, 0, &Settings.F }
 #define ISET(F,D,N,H) { N, H, \
 	HID_Integer, 0, 0, { D, 0, 0 }, 0, &Settings.F }
 #define BSET(F,D,N,H) { N, H, \

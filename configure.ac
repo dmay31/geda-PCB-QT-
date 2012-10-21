@@ -288,11 +288,11 @@ for hid in `cd $srcdir/src/hid; echo *`; do
     fi
 done
 
-AC_MSG_CHECKING([for which gui to use])
+AC_MSG_CHECKING([for which gui to use you boob head])
 AC_ARG_WITH([gui],
-[  --with-gui=	          Specify the GUI to use: batch gtk lesstif [[default=gtk]]],
+[  --with-gui=	          Specify the GUI to use: batch gtk lesstif [[default=qt]]],
 [],
-[with_gui=gtk]
+[with_gui=qt]
 )
 AC_MSG_RESULT([$with_gui])
 case " $hid_guis no none " in

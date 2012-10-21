@@ -303,7 +303,7 @@ ghid_port_button_press_cb (GtkWidget * drawing_area,
 {
   ModifierKeysState mk;
   GdkModifierType state;
-
+  Message (_("Mouse Press\n"));
   /* Reject double and triple click events */
   if (ev->type != GDK_BUTTON_PRESS) return TRUE;
 

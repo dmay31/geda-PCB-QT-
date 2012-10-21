@@ -336,6 +336,7 @@ struct pin_st
   char *Name, *Number;
   void *Element;
   void *Spare;
+  bool Teardrop;
 };
 
 /* This is the extents of a Pin or Via, depending on whether it's a
