@@ -280,10 +280,11 @@ libqt_a_CPPFLAGS = -I./hid/qt
 LIBQT_SRCS = \
 	hid/qt/qthid-main.c \
 	hid/qt/gui-config.c \
-	hid/qt/gui-top-window.c \
+	hid/qt/gui-top-window.cpp \
 	hid/qt/gui-log-window.c
-libqt_a_SOURCES = ${LIBQT_SRCS} hid/gtk/qt_lists.h
+libqt_a_SOURCES = ${LIBQT_SRCS} hid/qt/qt_lists.h
 
+hid/qt/qt_lists.h : ${LIBQT_SRCS} Makefile
 ${LIBQT_SRCS} : Makefile
 	$(MKDIR_P) hid/qt
 	true > $@

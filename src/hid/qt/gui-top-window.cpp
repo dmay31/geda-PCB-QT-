@@ -6,7 +6,7 @@
  */
 #include "global.h"
 #include "gui.h"
-
+#include <QtCore>
 
 
 
