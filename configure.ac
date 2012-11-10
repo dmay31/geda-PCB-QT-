@@ -742,7 +742,7 @@ for e in $HIDLIST; do
 	if test "$PKG_CONFIG" = "no"; then
 		AC_MSG_ERROR([Cannot find pkg-config, make sure it is installed and in your PATH])
 	fi
-
+    AC_MSG_RESULT([ WHY!!!!!!!!!!!!!!!!!!!!!])
 	PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.18.0, ,
 		[AC_MSG_ERROR([Cannot find gtk+ >= 2.18.0, install it and rerun ./configure
 Please review the following errors:
@@ -762,6 +762,11 @@ $GTKGLEXT_PKG_ERRORS])]
 	fi
 
 	;;
+	
+	qt )
+	AC_MSG_RESULT([ CHECKING FOR QT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!])
+	PKG_CHECK_MODULES(QT, QtCore, ,	) ;;
+	
 
       png)
 	need_gdlib=yes
@@ -1119,8 +1124,8 @@ AC_DEFINE_UNQUOTED([COORD_MAX],[$COORD_MAX],
 
 # ------------- Complete set of CPPFLAGS and LIBS -------------------
 
-CPPFLAGS="$CPPFLAGS $X_CFLAGS $DBUS_CFLAGS $GLIB_CFLAGS $GTK_CFLAGS $GD_CFLAGS $CAIRO_CFLAGS $GTKGLEXT_CFLAGS $GLU_CFLAGS $GL_CFLAGS"
-LIBS="$LIBS $XM_LIBS $DBUS_LIBS $X_LIBS $GLIB_LIBS $GTK_LIBS $DMALLOC_LIBS $GD_LIBS $INTLLIBS $CAIRO_LIBS $GTKGLEXT_LIBS $GLU_LIBS $GL_LIBS"
+CPPFLAGS="$CPPFLAGS $X_CFLAGS $DBUS_CFLAGS $GLIB_CFLAGS $GTK_CFLAGS $QT_CFLAGS $CAIRO_CFLAGS $GTKGLEXT_CFLAGS $GLU_CFLAGS $GL_CFLAGS"
+LIBS="$LIBS $XM_LIBS $DBUS_LIBS $X_LIBS $GLIB_LIBS $GTK_LIBS  $QT_LIBS $DMALLOC_LIBS $GD_LIBS $INTLLIBS $CAIRO_LIBS $GTKGLEXT_LIBS $GLU_LIBS $GL_LIBS"
 
 
 # if we have gcc then add -Wall
