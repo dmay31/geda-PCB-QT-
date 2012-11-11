@@ -278,18 +278,12 @@ hid/common/hidlist.h : Makefile
 	
 libqt_a_CPPFLAGS = -I./hid/qt
 LIBQT_SRCS = \
-	hid/qt/qthid-main.c \
+	hid/qt/qthid-main.cpp \
 	hid/qt/gui-config.c \
 	hid/qt/gui-top-window.cpp \
+	hid/qt/gui-graphics-scene.cpp \
 	hid/qt/gui-log-window.c
 libqt_a_SOURCES = ${LIBQT_SRCS} hid/qt/qt_lists.h
-
-hid/qt/qt_lists.h : ${LIBQT_SRCS} Makefile
-${LIBQT_SRCS} : Makefile
-	$(MKDIR_P) hid/qt
-	true > $@
-	(for f in ${LIBQT_SRCS} ; do cat $(srcdir)/$$f ; done) | grep "^REGISTER" > $@.tmp
-	mv $@.tmp $@
 
 libgtk_a_CPPFLAGS = -I./hid/gtk
 LIBGTK_SRCS = \

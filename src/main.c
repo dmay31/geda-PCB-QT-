@@ -1990,10 +1990,10 @@ main (int argc, char *argv[])
   ResetStackAndVisibility ();
 
   if (gui->gui)
-    InitCrosshair ();
+  //  InitCrosshair ();
   InitHandler ();
   InitBuffers ();
-  SetMode (ARROW_MODE);
+  //SetMode (ARROW_MODE);
 
   if (command_line_pcb)
     {
