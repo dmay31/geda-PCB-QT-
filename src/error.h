@@ -30,6 +30,9 @@
 #ifndef	PCB_ERROR_H
 #define	PCB_ERROR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define	STATUS_OK		0
 #define	STATUS_BREAK	1
@@ -43,4 +46,7 @@ void OpendirErrorMessage (char *);
 void ChdirErrorMessage (char *);
 void CatchSignal (int);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

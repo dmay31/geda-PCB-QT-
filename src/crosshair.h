@@ -30,6 +30,10 @@
 #ifndef	PCB_CROSSHAIR_H
 #define	PCB_CROSSHAIR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "global.h"
 
 /* ---------------------------------------------------------------------------
@@ -51,5 +55,9 @@ void SetCrosshairRange (Coord, Coord, Coord, Coord);
 void InitCrosshair (void);
 void DestroyCrosshair (void);
 void FitCrosshairIntoGrid (Coord, Coord);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

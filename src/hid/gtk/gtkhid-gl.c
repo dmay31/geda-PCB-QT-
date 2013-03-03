@@ -532,14 +532,6 @@ use_gc (hidGC gc)
 }
 
 void
-ghid_draw_line (hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2)
-{
-  USE_GC (gc);
-
-  hidgl_draw_line (gc->cap, gc->width, x1, y1, x2, y2, gport->view.coord_per_px);
-}
-
-void
 ghid_draw_arc (hidGC gc, Coord cx, Coord cy, Coord xradius, Coord yradius,
                          Angle start_angle, Angle delta_angle)
 {
@@ -547,6 +539,14 @@ ghid_draw_arc (hidGC gc, Coord cx, Coord cy, Coord xradius, Coord yradius,
 
   hidgl_draw_arc (gc->width, cx, cy, xradius, yradius,
                   start_angle, delta_angle, gport->view.coord_per_px);
+}
+
+void
+ghid_draw_line (hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2)
+{
+  USE_GC (gc);
+
+  hidgl_draw_line (gc->cap, gc->width, x1, y1, x2, y2, gport->view.coord_per_px);
 }
 
 void
@@ -757,6 +757,7 @@ draw_crosshair (render_priv *priv)
   glBegin (GL_LINES);
 
   draw_right_cross (x, y, z);
+  printf("x: %d y: %d \n", x, y);
   if (Crosshair.shape == Union_Jack_Crosshair_Shape)
     draw_slanted_cross (x, y, z);
   if (Crosshair.shape == Dozen_Crosshair_Shape)
@@ -894,6 +895,7 @@ ghid_drawing_area_expose_cb (GtkWidget *widget,
   glMatrixMode (GL_PROJECTION);
   glLoadIdentity ();
   glOrtho (0, allocation.width, allocation.height, 0, -100000, 100000);
+  printf("ORTHO: x: %d, y: %d         ", allocation.width, allocation.height );
   glMatrixMode (GL_MODELVIEW);
   glLoadIdentity ();
   glTranslatef (widget->allocation.width / 2., widget->allocation.height / 2., 0);
@@ -1151,10 +1153,10 @@ ghid_pinout_preview_expose (GtkWidget *widget,
   glScalef ((gport->view.flip_x ? -1. : 1.) / gport->view.coord_per_px,
             (gport->view.flip_y ? -1. : 1.) / gport->view.coord_per_px,
             ((gport->view.flip_x == gport->view.flip_y) ? 1. : -1.) / gport->view.coord_per_px);
-  glTranslatef (gport->view.flip_x ? gport->view.x0 - PCB->MaxWidth  :
-                                    -gport->view.x0,
-                gport->view.flip_y ? gport->view.y0 - PCB->MaxHeight :
-                                    -gport->view.y0, 0);
+ // glTranslatef (gport->view.flip_x ? gport->view.x0 - PCB->MaxWidth  :
+ //                                   -gport->view.x0,
+ //              gport->view.flip_y ? gport->view.y0 - PCB->MaxHeight :
+  //                                  -gport->view.y0, 0);
 
   hid_expose_callback (&ghid_hid, NULL, pinout->element);
   hidgl_flush_triangles (&buffer);

@@ -669,8 +669,8 @@ void
 DrawMark (void)
 {
   /* Mark is not drawn when it is not set */
-  if (!Marked.status)
-    return;
+//  if (!Marked.status)
+//    return;
 
   gui->graphics->draw_line (Crosshair.GC,
                   Marked.X - MARK_SIZE,
@@ -927,6 +927,11 @@ FitCrosshairIntoGrid (Coord X, Coord Y)
   struct snap_data snap_data;
   int ans;
 
+  Crosshair.X = X;
+  Crosshair.Y = Y;
+  gui->set_crosshair (Crosshair.X, Crosshair.Y, HID_SC_DO_NOTHING);
+  return;
+
   Crosshair.X = CLAMP (X, Crosshair.MinX, Crosshair.MaxX);
   Crosshair.Y = CLAMP (Y, Crosshair.MinY, Crosshair.MaxY);
 
@@ -1167,7 +1172,7 @@ InitCrosshair (void)
 {
   Crosshair.GC = gui->graphics->make_gc ();
 
-  gui->graphics->set_color (Crosshair.GC, Settings.CrosshairColor);
+ gui->set_color (Crosshair.GC, Settings.CrosshairColor);
   gui->graphics->set_draw_xor (Crosshair.GC, 1);
   gui->graphics->set_line_cap (Crosshair.GC, Trace_Cap);
   gui->graphics->set_line_width (Crosshair.GC, 1);

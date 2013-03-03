@@ -61,6 +61,7 @@ ghid_port_ranges_changed (void)
   v_adj = gtk_range_get_adjustment (GTK_RANGE (ghidgui->v_range));
   gport->view.x0 = gtk_adjustment_get_value (h_adj);
   gport->view.y0 = gtk_adjustment_get_value (v_adj);
+printf( " Range x: %d, y: %d \n", gport->view.x0, gport->view.y0 );
 
   ghid_invalidate_all ();
 }

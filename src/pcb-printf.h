@@ -76,6 +76,10 @@
 #ifndef	PCB_PCB_PRINTF_H
 #define	PCB_PCB_PRINTF_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum e_allow {
   NO_PRINT = 0,		/* suffixes we can read but not print (i.e., "inch") */
   ALLOW_NM = 1,
@@ -167,7 +171,10 @@ int pcb_fprintf(FILE *f, const char *fmt, ...);
 int pcb_sprintf(char *string, const char *fmt, ...);
 int pcb_printf(const char *fmt, ...);
 char *pcb_g_strdup_printf(const char *fmt, ...);
-gchar *pcb_vprintf(const char *fmt, va_list args);
+char *pcb_vprintf(const char *fmt, va_list args);
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 

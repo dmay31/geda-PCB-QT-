@@ -278,12 +278,19 @@ hid/common/hidlist.h : Makefile
 	
 libqt_a_CPPFLAGS = -I./hid/qt
 LIBQT_SRCS = \
+	hid/qt/qthid.cpp \
 	hid/qt/qthid-main.cpp \
 	hid/qt/gui-config.c \
 	hid/qt/gui-top-window.cpp \
 	hid/qt/gui-graphics-scene.cpp \
 	hid/qt/gui-log-window.c
 libqt_a_SOURCES = ${LIBQT_SRCS} hid/qt/qt_lists.h
+
+hid/qt/qthid.moc : hid/qt/qthid.h
+	moc $(DEFINES) $(INCPATH) $< -o $@ 
+	
+hid/qt/gui-top_window.moc : hid/qt/gui-top_window.h
+	moc $(DEFINES) $(INCPATH) $< -o $@  
 
 libgtk_a_CPPFLAGS = -I./hid/gtk
 LIBGTK_SRCS = \
