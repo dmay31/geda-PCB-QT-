@@ -55,7 +55,7 @@
 #include "misc.h"
 #include "strflags.h"
 #include "parse_l.h"
-#include "parse_y.h"
+#include "parse_y.tab.h"
 #include "create.h"
 
 #define YY_NO_INPUT

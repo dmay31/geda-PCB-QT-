@@ -1,0 +1,60 @@
+
+def configure(conf):
+    conf.check_cfg(package='QtCore', args='--libs --cflags')
+    conf.check_cfg(package='QtOpenGL', args='--libs --cflags')
+    conf.find_program('moc')
+    conf.check_cfg(package='QtGui', args='--libs --cflags')
+    conf.check_tool('gcc')
+    conf.check_tool('compiler_c')
+    conf.check_tool('cxx')
+    conf.check_tool('ar')
+    
+    
+files  =[  
+        'bbtree.c',
+        'boolean.c',
+        'cdt.c',
+        'container.c',
+        'curvature.c',
+        'edge.c',
+        'eheap.c',
+        'face.c',
+        'fifo.c',
+        'graph.c',
+        'heap.c',
+        'hsurface.c',
+        'iso.c',
+        'isotetra.c',
+        'kdtree.c',
+        'matrix.c',
+        'misc.c',
+        'named.c',
+        'object.c',
+        'oocs.c',
+        'partition.c',
+        'pgraph.c',
+        'point.c',
+        'predicates.c',
+        'psurface.c',
+        'refine.c',
+        'segment.c',
+        'split.c',
+        'stripe.c',
+        'surface.c',
+        'triangle.c',
+        'tribox3.c',
+        'vertex.c',
+        'vopt.c'
+        ]
+def build(bld):
+    
+    my_sources = ''
+    for f in files:
+        my_sources += f + ' '
+
+    bld.stlib( target = 'gts',
+               name = 'GTSLIB',
+               source=my_sources,
+               uselib ='GLIB-2.0',
+               includes=['.', '../']
+            )

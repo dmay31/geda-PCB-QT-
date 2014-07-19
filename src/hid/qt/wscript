@@ -1,0 +1,26 @@
+'''
+Created on Jul 13, 2014
+
+@author: dale
+'''
+def configure(conf):
+    conf.check_cfg(package='QtCore', args='--libs --cflags')
+    conf.check_cfg(package='QtOpenGL', args='--libs --cflags')
+    conf.check_cfg(package='QtGui', args='--libs --cflags')
+    conf.check_tool('gcc')
+    conf.check_tool('compiler_cxx')
+    conf.check_tool('cxx')
+    conf.check_tool('ar')
+    
+def build(bld):
+    print "Building QT_GUI"
+    
+    bld.stlib(
+                     target = 'qt',
+                     name = 'LIBQT',
+                     source='qthid.cpp qthid-main.cpp qt-config.cpp gui-top-window.cpp gui-graphics-scene.cpp gui-log-window.c',
+                     includes=['.', './../..', './../../..'],
+                     uselib = 'GLIB-2.0 QTCORE QTGUI QTOPENGL',
+                     defines = 'HAVE_CONFIG_H',
+                     cxxflags = '-g'
+                    )

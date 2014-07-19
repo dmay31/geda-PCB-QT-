@@ -18,7 +18,7 @@
 
 #include "global.h"
 #include "resource.h"
-#include "res_parse.h"
+#include "res_parse.tab.h"
 
 #ifdef HAVE_LIBDMALLOC
 #include <dmalloc.h>

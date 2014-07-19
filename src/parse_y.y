@@ -97,7 +97,7 @@ static Coord new_units (PLMeasure m);
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
 
-#include "parse_y.h"
+#include "parse_y.tab.h"
 
 %}
 

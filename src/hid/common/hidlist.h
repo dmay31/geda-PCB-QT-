@@ -1,0 +1,1 @@
+HID_DEF(qt)

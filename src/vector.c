@@ -71,7 +71,7 @@ struct vector_struct
  */
 
 /* helper function for assertions */
-#ifndef NDEBUG
+//#ifndef //NDEBUG
 static int
 __vector_is_good (vector_t * vector)
 {
@@ -79,7 +79,7 @@ __vector_is_good (vector_t * vector)
     (vector->max >= 0) && (vector->size >= 0) &&
     (vector->size <= vector->max) && 1;
 }
-#endif /* !NDEBUG */
+//#endif /* !NDEBUG */
 
 /* create an empty vector */
 vector_t *
