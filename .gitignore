@@ -14,3 +14,7 @@ stamp-*
 /missing
 *.backup
 test-driver
+/build
+*.orig
+.waf*
+.lock-waf*

@@ -3,6 +3,7 @@
 #include <QtCore>
 #include "global.h"
 #include "gui.h"
+#include "hid_draw.h"
 #include "../hidint.h"
 #include "qthid.h"
 
@@ -10,6 +11,8 @@
 HID qhid_hid;
 QtHID*	HID_obj;
 QApplication*  App; //( 0, NULL);
+
+static HID_DRAW qhid_graphics;
 
 hid_gc_struct* qt_make_gc( void );
 void qt_set_color(hidGC gc, const char *name);
@@ -37,11 +40,13 @@ void hid_qt_init()
 	  qhid_hid.parse_arguments          = qhid_parse_arguments;
 	  qhid_hid.logv						= ghid_logv;
 	  qhid_hid.do_export				= qt_do_export;
-	  qhid_hid.make_gc					= qt_make_gc;
-	  qhid_hid.set_color				= qt_set_color;
-	  qhid_hid.set_line_cap				= qt_set_line_cap;
-	  qhid_hid.set_line_width			= qt_set_line_width;
-	  qhid_hid.draw_line				= qt_draw_line;
+
+	  qhid_hid.graphics 				= &qhid_graphics;
+	  qhid_hid.graphics->make_gc		= qt_make_gc;
+	  qhid_hid.graphics->set_color		= qt_set_color;
+	  qhid_hid.graphics->set_line_cap	= qt_set_line_cap;
+	  //qhid_hid.graphcis->set_line_width			= qt_set_line_width;
+	  qhid_hid.graphics->draw_line		= qt_draw_line;
 	  qhid_hid.notify_crosshair_change	= qt_update_widget;
 	  qhid_hid.set_crosshair			= qt_set_crosshair;
 
