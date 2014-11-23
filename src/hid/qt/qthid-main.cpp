@@ -21,6 +21,7 @@ void qt_set_line_width(hidGC gc, Coord width);
 void qt_draw_line (hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2);
 void qt_update_widget( bool change_complete );
 void qt_set_crosshair( int x, int y, int action );
+void qt_set_draw_xor(hidGC gc, int xor_);
 
 void hid_qt_init()
 {
@@ -48,6 +49,8 @@ void hid_qt_init()
       qhid_hid.graphics->draw_line		= qt_draw_line;
 	  qhid_hid.notify_crosshair_change	= qt_update_widget;
 	  qhid_hid.set_crosshair			= qt_set_crosshair;
+	  qhid_hid.graphics->set_draw_xor   = qt_set_draw_xor;
+	  qhid_hid.graphics->set_line_width = qt_set_line_width;
 
 
 	  hid_register_hid (&qhid_hid);
@@ -101,4 +104,10 @@ ghid_logv (const char *fmt, va_list args)
 {
 //char *msg = pcb_vprintf (fmt, args);
 }
+
+void qt_set_draw_xor(hidGC gc, int xor_)
+{
+// TODO
+}
+
 
