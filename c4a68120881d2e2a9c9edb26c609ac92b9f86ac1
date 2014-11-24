@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fafc7978_c01471f7",
+        "filename": "src/hid/qt/qthid-main.cpp",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1003056
+      },
+      "writtenOn": "2014-11-24T15:31:05Z",
+      "side": 1,
+      "message": "Lets remove the tabs!",
+      "revId": "c4a68120881d2e2a9c9edb26c609ac92b9f86ac1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
