@@ -3,11 +3,15 @@
 /*-----------------------------------------------
   	  	  	     Variables
  ----------------------------------------------*/
-extern HID qhid_hid;
+QtHID*   QtHID::pMe;
+HID*     QtHID::pIntf;
+HID_DRAW QtHID::QtGraphics;
 
 /*-----------------------------------------------
   	  	  	     Functions
  ----------------------------------------------*/
+
+
 
 /* Constructor */
 QtHID::QtHID(QWidget *Parent)
@@ -21,6 +25,135 @@ qtGreen = QColor::fromRgbF(0,0,0,0);
 QtHID::~QtHID()
 {
 
+}
+
+/** @brief Instantiates a new HID object and registers it
+ *         with the PCB framework.
+ *
+ *  @param Void.
+ *  @return Void.
+ */
+void QtHID::init_interface( HID* intf )
+{
+intf->struct_size              = sizeof (HID);
+intf->name                     = "qt";
+intf->description              = "Qt Interface";
+intf->gui                      = 1;
+intf->poly_after               = 1;
+
+intf->parse_arguments          = parse_arguments;
+intf->logv                     = logger;
+intf->graphics                 = &QtGraphics;
+intf->graphics->make_gc        = make_gc;
+intf->graphics->set_color      = set_color;
+intf->graphics->set_line_cap   = set_line_cap;
+intf->graphics->draw_line      = draw_a_line;
+intf->notify_crosshair_change  = update_widget;
+intf->set_crosshair            = set_crosshair;
+intf->graphics->set_draw_xor   = set_draw_xor;
+intf->graphics->set_line_width = set_line_width;
+
+/* Store pointer to the HID object */
+QtHID::pIntf = intf;
+
+QtHID::pMe = this;
+}
+/**
+ * @brief  Build a new Graphic Context object
+ *         which will hold the contextual state
+ *         for the HID exporter
+ *
+ * @param  Void.
+ * @return Pointer to the GC object
+ */
+hidGC QtHID::make_gc( void )
+{
+/* Variables */
+hidGC gc;
+
+/* Allocate memory for GC */
+gc = (hidGC)malloc( sizeof(struct hid_gc_struct) );
+
+/* Setup GC */
+gc->me_pointer = QtHID::pIntf;
+gc->colorname = Settings.BackgroundColor;
+gc->alpha_mult = 1.0;
+return gc;
+} /* make_gc() */
+
+/**
+ * @brief Parse the command line arguments
+ *
+ * @param Command line flags
+ * @return Void.
+ */
+void QtHID::parse_arguments( int *argc, char ***argv )
+{
+//TODO
+} /* parse_arguments() */
+
+/**
+ * @brief Prints formated text to a logger
+ *        object that lives in the main
+ *        window application
+ *
+ * @param Format string
+ * @param variable list of data to print in formated
+ *        text
+ * @return Void.
+ */
+void QtHID::logger( const char *fmt, va_list args )
+{
+//TODO
+} /* logger() */
+
+/**
+ * @brief Set the color for the graphics context
+ *
+ * @param The graphic context object
+ * @param The color name
+ * @return Void.
+ */
+void QtHID::set_color(hidGC gc, const char *name)
+{
+gc->colorname = name;
+} /* set_color() */
+
+/**
+ * @brief Set the line style
+ *
+ * @param Grapics Context
+ * @param Line Style
+ * @return Void.
+ */
+void QtHID::set_line_cap( hidGC gc, EndCapStyle style )
+{
+gc->cap = style;
+} /* set_line_cap() */
+
+void QtHID::draw_a_line( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 )
+{
+QtHID::pMe->draw_line( gc->cap, gc->width, x1, y1, x2, y2, 1 );
+}
+
+void QtHID::update_widget( bool change_complete )
+{
+QtHID::pMe->update();
+}
+
+void QtHID::set_crosshair( int x, int y, int action )
+{
+QtHID::pMe->setcrosshairs( x, y);
+}
+
+void QtHID::set_draw_xor( hidGC gc, int xor_ )
+{
+//TODO
+}
+
+void QtHID::set_line_width( hidGC gc, Coord width )
+{
+gc->width = width;
 }
 
 void QtHID::flush_triangles(triangle_buffer* buffer)

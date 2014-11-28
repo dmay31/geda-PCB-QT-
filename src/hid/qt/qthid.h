@@ -12,6 +12,9 @@
 #include "data.h"
 #include "crosshair.h"
 #include "error.h"
+#include "hid_draw.h"
+#include "gui.h"
+#include <QApplication>
 #include <QGLWidget>
 #include <QWidget>
 #include <QMouseEvent>
@@ -56,11 +59,22 @@ public:
 
 class QtHID : public QGLWidget
 {
+
+
+
 	Q_OBJECT
 
 public:
-	 QtHID(QWidget *Parent);
+	/* Constructor(s) */
+	 QtHID(QWidget *Parent = 0);
+
+	 /* Destructor */
 	~QtHID();
+	static QtHID*           pMe;
+	static HID*             pIntf;
+
+	/* Other Public Functions */
+	void init_interface( HID* intf );
 	void initializeGL();
 	void flush_triangles (triangle_buffer *buffer);
 	void draw_line(int cap, Coord width, Coord x1, Coord y1, Coord x2, Coord y2, double scale);
@@ -78,9 +92,31 @@ public slots:
 	void valueChanged(bool);
 
 private:
+	/* Static variables */
+
+	static HID_DRAW QtGraphics;
+	static QApplication*  	App; //The main QT Window Application
+
 	triangle_buffer buffer;
 	QColor qtGreen;
 	DrawPort qport;
+
+	/* Private Variables */
+
+
+
+	/* Private Functions */
+    static hidGC    make_gc( void );
+	static void     parse_arguments( int *argc, char ***argv );
+	static void     logger( const char *fmt, va_list args );
+	static void     set_color( hidGC gc, const char *name );
+	static void     set_line_cap( hidGC gc, EndCapStyle style );
+    static void     draw_a_line( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 );
+    static void     update_widget( bool change_complete );
+    static void     set_crosshair( int x, int y, int action );
+    static void     set_draw_xor(hidGC gc, int xor_);
+    static void     set_line_width( hidGC gc, Coord width );
+
 
 	void mouseMoveEvent ( QMouseEvent * e );
 	//void mousePressEvent( QMouseEvent* ev );
