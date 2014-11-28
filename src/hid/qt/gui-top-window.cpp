@@ -17,35 +17,44 @@
 
 #include "global.h"
 #include "gui.h"
-#include "gui-top_window.h"
 #include "gui-graphics-scene.h"
-#include "qthid.h"
+#include "gui-top_window.h"
 #include "pcb-printf.h"
 
-extern QtHID*	HID_obj;
-extern QApplication* App;
+static QApplication* App;
 
-static void qt_build_top_window ( void );
+/**
+ * @brief Initialize the QT interface
+ */
+void hid_qt_init( void )
+{
+/* static memory to hold the HID interface */
+static HID intfQT;
+QtHID*     qHID;
+
+App = new QApplication( 0, NULL );
+
+qHID = new QtHID(0);
+qHID->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+
+qHID->init_interface( &intfQT );
+intfQT.do_export = Top_Window::build_top_window;
+
+hid_register_hid ( &intfQT );
+
+}
 
 
 void qhid_parse_arguments (int *argc, char ***argv)
 {
-
-
-  	ghid_config_init();
+ghid_config_init();
 }
 
 
-void qt_do_export ( HID_Attr_Val* A )
-{
-qt_build_top_window();
 
-}
-
-static void qt_build_top_window ( void )
+void Top_Window::build_top_window ( HID_Attr_Val* A  )
 {
 
-	//QApplication App(0, NULL );
     Top_Window w;
 
     w.show();
@@ -54,7 +63,6 @@ static void qt_build_top_window ( void )
 
 /* Constructor */
 Top_Window::Top_Window()
-
 {
 	QMenu * MenuPtr;
     QTextEdit*	console = new QTextEdit;
@@ -62,16 +70,13 @@ Top_Window::Top_Window()
     QListWidgetItem* item = new QListWidgetItem;
     QAction * ViaButton;
 
-
-
-
     QDockWidget *leftDock = new QDockWidget( tr("Layers"), this );
     QDockWidget *dockConsole = new QDockWidget( tr("Console"), this);
 
     QVBoxLayout* buttonlayout = new QVBoxLayout;
 
     QToolBar* sideToolbar = new QToolBar;
-    ViaButton = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", HID_obj, SLOT( valueChanged(bool)) );
+    ViaButton = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", glObj, SLOT( valueChanged(bool)) );
     ViaButton->setCheckable( TRUE );
 
     this->addToolBar(Qt::LeftToolBarArea, sideToolbar);
@@ -120,7 +125,7 @@ Top_Window::Top_Window()
 
 
     this->setWindowTitle("gEDA PCB");
-    this->setCentralWidget( HID_obj );
+    this->setCentralWidget( this->glObj );
 
 
 }

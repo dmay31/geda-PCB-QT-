@@ -10,6 +10,7 @@
 
 #include <QtGui/QWidget>
 #include <QMainWindow>
+#include "qthid.h"
 
 class QComboBox;
 class QToolBar;
@@ -22,6 +23,8 @@ public:
 	Top_Window();
 	~Top_Window();
 
+	static void build_top_window( HID_Attr_Val* A );
+
 protected:
 
 private:
@@ -33,6 +36,8 @@ private:
     QToolBar * MyToolBar;
     QMenuBar * MyMenuBar;
     QMenu * Menu[5];
+
+    QtHID*	glObj;
 
     enum
     {
