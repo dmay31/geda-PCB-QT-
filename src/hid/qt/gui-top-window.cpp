@@ -5,15 +5,14 @@
  *      Author: dale
  */
 
-#include <QtGui>
-#include <QToolBar>
-#include <QPainter>
-#include <QMainWindow>
+#include <QWidget>
+#include <QtCore>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QDockWidget>
 #include <QGraphicsScene>
 #include <QGLWidget>
-#include <QScrollArea>
- #include <QTextEdit>
-
+#include <QtGui>
 
 #include "global.h"
 #include "gui.h"
@@ -21,44 +20,50 @@
 #include "gui-top_window.h"
 #include "pcb-printf.h"
 
+/* Variables */
 static QApplication* App;
+static QtHID*        qHID;
+static HID           intfQT;
+static Top_Window*   pTopWindow;
 
 /**
  * @brief Initialize the QT interface
  */
 void hid_qt_init( void )
 {
-/* static memory to hold the HID interface */
-static HID intfQT;
-QtHID*     qHID;
-
+/* New QT executable object */
 App = new QApplication( 0, NULL );
 
+/* New OpenGL QT object */
 qHID = new QtHID(0);
 qHID->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
+/* Setup the interface object with the drawing Widget */
 qHID->init_interface( &intfQT );
+
+/* Top Window related callbacks for the PCB framework */
 intfQT.do_export = Top_Window::build_top_window;
 
+/* Register the interface callbacks with the PCB framework */
 hid_register_hid ( &intfQT );
-
-}
-
-
-void qhid_parse_arguments (int *argc, char ***argv)
-{
-ghid_config_init();
-}
+} /* hid_qt_init() */
 
 
-
+/**
+ * @brief Construct a new top window widget
+ *
+ * @param attributes regarding the profile of the Top Window
+ */
 void Top_Window::build_top_window ( HID_Attr_Val* A  )
 {
+/* Instantiate a new Top Window */
+pTopWindow = new Top_Window;
 
-    Top_Window w;
+/* Show the top window */
+pTopWindow->show();
 
-    w.show();
-    App->exec();
+/* Run the application (No return!) */
+App->exec();
 }
 
 /* Constructor */
@@ -76,19 +81,18 @@ Top_Window::Top_Window()
     QVBoxLayout* buttonlayout = new QVBoxLayout;
 
     QToolBar* sideToolbar = new QToolBar;
-    ViaButton = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", glObj, SLOT( valueChanged(bool)) );
+    ViaButton = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", glObj, SLOT( valueChanged(bool) ) );
     ViaButton->setCheckable( TRUE );
 
     this->addToolBar(Qt::LeftToolBarArea, sideToolbar);
 
     dockConsole->setAllowedAreas(Qt::RightDockWidgetArea);
 
-
-    dockConsole->setWidget( console );
+    dockConsole->setWidget( (QWidget*)console );
     leftDock->setWidget( table );
 
 
-    console->textCursor().insertText("Welcome to gEDA! ");
+    console->textCursor().insertText("Welcome to gEDA!");
     item->setText("Layer 1");
     item->setIcon(QIcon("/home/dale/PCB/pcb/src/hid/qt/package_dim.png"));
     table->addItem(item);
@@ -125,7 +129,7 @@ Top_Window::Top_Window()
 
 
     this->setWindowTitle("gEDA PCB");
-    this->setCentralWidget( this->glObj );
+    this->setCentralWidget( qHID );
 
 
 }
