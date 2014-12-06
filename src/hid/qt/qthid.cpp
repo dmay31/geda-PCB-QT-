@@ -28,6 +28,8 @@ ppx = 1 / zoom;
 setMouseTracking(true);
 qtGreen = QColor::fromRgbF(0,0,0,0);
 
+setFocusPolicy(Qt::StrongFocus);
+
 }
 
 /* Destructor */
@@ -559,16 +561,18 @@ void QtHID::add_triangle_3D (triangle_buffer *buffer,
 }
 void QtHID::mouseMoveEvent ( QMouseEvent * e )
 {
-    bool moved;
-    Coord x, y;
+bool moved;
+Coord x, y;
 
-    x = (Coord)e->x();
-    y = (Coord)e->y();
+/* Grab new mouse coordinates */
+x = (Coord)e->x();
+y = (Coord)e->y();
 
-    moved = MoveCrosshairAbsolute(x, y);
-    gui->notify_crosshair_change(true);
+/* Notify framework of change */
+moved = MoveCrosshairAbsolute(x, y);
+gui->notify_crosshair_change(true);
 
-}
+} /* mouseMoveEvent() */
 
 void QtHID::wheelEvent ( QWheelEvent * e )
 {
@@ -579,28 +583,33 @@ float Gly;
 int delta;
 int sign;
 float zoom_change;
+float zoom_prcnt;
 
 /* Get the GL coordinate under the current mouse position before the zoom */
-Glx = ( e->x() * ppx ) - tx;
-Gly = ( e->y() * ppx ) - ty;
+Glx = ( e->x() - tx ) / zoom ;
+Gly = ( e->y() - ty ) / zoom ;
 
+/* Get the zoom direction */
 delta = e->delta();
 sign = ( delta / abs(delta) );
+
+/* Set the zoom change */
 zoom_change = ZOOM_PER_WHEEL_CLICK * sign;
 
+/* Calculate the percent change in zoom */
+zoom_prcnt = 1 - ( zoom_change + zoom  * ppx );
+
+/* Calculate how far the x & y components of the GL point will move */
+tx += Glx * zoom_prcnt;;
+ty += Gly * zoom_prcnt;
+
+/* Store the new zoom level */
 zoom += zoom_change;
 ppx = 1 / zoom;
 
-
-
-printf("GLX: %f   GLY:  %f ", Glx, Gly );
-
-/* How much does the point move by the scaling factor */
-tx -= Glx * zoom_change;
-ty -= Gly * zoom_change;
-
+/* Update the screen */
 this->updateGL();
-}
+} /* wheelEvent() */
 
 void QtHID::mousePressEvent( QMouseEvent* e )
 {
@@ -609,8 +618,48 @@ printf("Button %d\n", e->button() );
 
 void QtHID::keyPressEvent( QKeyEvent *e )
 {
-//TODO
-}
+QPoint *	point;
+
+point = NULL;
+
+switch( e->key() )
+    {
+    case Qt::Key_Up:
+        {
+        point = new QPoint(qport.x, qport.y - 1);
+        break;
+        }
+
+    case Qt::Key_Down:
+        {
+        point = new QPoint(qport.x, qport.y + 1);
+        break;
+        }
+
+    case Qt::Key_Right:
+        {
+        point = new QPoint(qport.x + 1, qport.y);
+        break;
+        }
+
+    case Qt::Key_Left:
+        {
+        point = new QPoint(qport.x - 1, qport.y);
+        break;
+        }
+
+    default:
+        break;
+    }
+if( NULL != point )
+    {
+    this->cursor().setPos( mapToGlobal(*point) );
+    delete point;
+    }
+
+this->update();
+} /* keyPressEvent() */
+
 
 /* This is the main repaint function */
 void QtHID::paintGL(void)
@@ -632,7 +681,6 @@ glMatrixMode (GL_MODELVIEW);
 
 glTranslatef( tx, ty, 0.0f );
 glScalef (zoom, zoom, 0 );
-printf("Scale %f \n", zoom );
 
 region.X1 = 0;
 region.Y1 = 0;
@@ -714,7 +762,7 @@ void QtHID::draw_right_cross (float x, float y,int z)
   glVertex3f (1, -1*(2*y-1), z);
   glVertex3f (-1, -1*(2*y-1), z);
   */
-printf(" %f    %f     %d     %d \n", x, y, this->width(), this->height() );
+
   glVertex3i (x, 0, z);
   glVertex3i (x, PCB->MaxHeight, z);
   glVertex3i (0, y, z);
