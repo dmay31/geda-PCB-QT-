@@ -27,10 +27,14 @@
 /* prototypes for update routines
  */
 
-#ifndef	PCB_SET_H
-#define	PCB_SET_H
+#ifndef    PCB_SET_H
+#define    PCB_SET_H
 
 #include "global.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void SetTextScale (int);
 void SetGrid (Coord, bool);
@@ -47,5 +51,9 @@ void SetLocalRef (Coord, Coord, bool);
 void SaveMode (void);
 void RestoreMode (void);
 void pcb_use_route_style (RouteStyleType *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -27,8 +27,8 @@
 /* global source constants
  */
 
-#ifndef	PCB_CONST_H
-#define	PCB_CONST_H
+#ifndef    PCB_CONST_H
+#define    PCB_CONST_H
 
 #include <limits.h>
 #include <math.h>
@@ -52,34 +52,34 @@
 /* ---------------------------------------------------------------------------
  * misc constants
  */
-#define	MARK_SIZE		MIL_TO_COORD(50)	/* relative marker size */
-#define	UNDO_WARNING_SIZE	(1024*1024)	/* warning limit of undo */
-#define	USERMEDIANAME		"user defined"	/* label of default media */
+#define    MARK_SIZE        MIL_TO_COORD(50)    /* relative marker size */
+#define    UNDO_WARNING_SIZE    (1024*1024)    /* warning limit of undo */
+#define    USERMEDIANAME        "user defined"    /* label of default media */
 
 /* ---------------------------------------------------------------------------
  * some math constants
  */
-#ifndef	M_PI
-#define	M_PI			3.14159265358979323846
+#ifndef    M_PI
+#define    M_PI            3.14159265358979323846
 #endif
 #ifndef M_SQRT1_2
-#define M_SQRT1_2 		0.707106781	/* 1/sqrt(2) */
+#define M_SQRT1_2         0.707106781    /* 1/sqrt(2) */
 #endif
-#define	M180			(M_PI/180.0)
-#define RAD_TO_DEG		(180.0/M_PI)
-#define	TAN_22_5_DEGREE_2	0.207106781	/* 0.5*tan(22.5) */
-#define COS_22_5_DEGREE		0.923879533	/* cos(22.5) */
-#define	TAN_30_DEGREE		0.577350269	/* tan(30) */
-#define	TAN_60_DEGREE		1.732050808	/* tan(60) */
-#define LN_2_OVER_2		0.346573590
+#define    M180            (M_PI/180.0)
+#define RAD_TO_DEG        (180.0/M_PI)
+#define    TAN_22_5_DEGREE_2    0.207106781    /* 0.5*tan(22.5) */
+#define COS_22_5_DEGREE        0.923879533    /* cos(22.5) */
+#define    TAN_30_DEGREE        0.577350269    /* tan(30) */
+#define    TAN_60_DEGREE        1.732050808    /* tan(60) */
+#define LN_2_OVER_2        0.346573590
 
 /* PCB/physical unit conversions */
-#define COORD_TO_MIL(n)	((n) / 25400.0)
-#define MIL_TO_COORD(n)	((n) * 25400.0)
-#define COORD_TO_MM(n)	((n) / 1000000.0)
-#define MM_TO_COORD(n)	((n) * 1000000.0)
-#define COORD_TO_INCH(n)	(COORD_TO_MIL(n) / 1000.0)
-#define INCH_TO_COORD(n)	(MIL_TO_COORD(n) * 1000.0)
+#define COORD_TO_MIL(n)    ((n) / 25400.0)
+#define MIL_TO_COORD(n)    ((n) * 25400.0)
+#define COORD_TO_MM(n)    ((n) / 1000000.0)
+#define MM_TO_COORD(n)    ((n) * 1000000.0)
+#define COORD_TO_INCH(n)    (COORD_TO_MIL(n) / 1000.0)
+#define INCH_TO_COORD(n)    (MIL_TO_COORD(n) * 1000.0)
 
 /* These need to be carefully written to avoid overflows, and return
    a Coord type.  */
@@ -89,26 +89,26 @@
 /* ---------------------------------------------------------------------------
  * modes
  */
-#define	NO_MODE			0	/* no mode selected */
-#define	VIA_MODE		1	/* draw vias */
-#define	LINE_MODE		2	/* draw lines */
-#define	RECTANGLE_MODE		3	/* create rectangles */
-#define	POLYGON_MODE		4	/* draw filled polygons */
-#define	PASTEBUFFER_MODE	5	/* paste objects from buffer */
-#define	TEXT_MODE		6	/* create text objects */
-#define	ROTATE_MODE		102	/* rotate objects */
-#define	REMOVE_MODE		103	/* remove objects */
-#define	MOVE_MODE		104	/* move objects */
-#define	COPY_MODE		105	/* copy objects */
-#define	INSERTPOINT_MODE	106	/* insert point into line/polygon */
-#define	RUBBERBANDMOVE_MODE	107	/* move objects and attached lines */
-#define THERMAL_MODE            108	/* toggle thermal layer flag */
-#define ARC_MODE                109	/* draw arcs */
-#define ARROW_MODE		110	/* selection with arrow mode */
-#define PAN_MODE                0	/* same as no mode */
-#define LOCK_MODE               111	/* lock/unlock objects */
-#define	POLYGONHOLE_MODE	112	/* cut holes in filled polygons */
-#define TEARDROP			115 /* add tear drop to via line intersection */
+#define    NO_MODE                  0      /* no mode selected */
+#define    VIA_MODE                 1      /* draw vias */
+#define    LINE_MODE                2      /* draw lines */
+#define    RECTANGLE_MODE           3      /* create rectangles */
+#define    POLYGON_MODE             4      /* draw filled polygons */
+#define    PASTEBUFFER_MODE         5      /* paste objects from buffer */
+#define    TEXT_MODE                6      /* create text objects */
+#define    ROTATE_MODE              102    /* rotate objects */
+#define    REMOVE_MODE              103    /* remove objects */
+#define    MOVE_MODE                104    /* move objects */
+#define    COPY_MODE                105    /* copy objects */
+#define    INSERTPOINT_MODE         106    /* insert point into line/polygon */
+#define    RUBBERBANDMOVE_MODE      107    /* move objects and attached lines */
+#define    THERMAL_MODE             108    /* toggle thermal layer flag */
+#define    ARC_MODE                 109    /* draw arcs */
+#define    ARROW_MODE               110    /* selection with arrow mode */
+#define    PAN_MODE                 0      /* same as no mode */
+#define    LOCK_MODE                111    /* lock/unlock objects */
+#define    POLYGONHOLE_MODE         112    /* cut holes in filled polygons */
+#define    TEARDROP                 115    /* add tear drop to via line intersection */
 
 /* ---------------------------------------------------------------------------
  * object flags
@@ -287,20 +287,20 @@ When set, element names are not drawn.
 @end table
 %end-doc */
 
-#define	PCB_FLAGS		0x000fffff	/* all used flags */
+#define    PCB_FLAGS        0x000fffff    /* all used flags */
 
 #define SHOWNUMBERFLAG          0x00000001
 #define LOCALREFFLAG            0x00000002
 #define CHECKPLANESFLAG         0x00000004
 #define SHOWDRCFLAG             0x00000008
-#define RUBBERBANDFLAG		0x00000010
-#define	DESCRIPTIONFLAG		0x00000020
-#define	NAMEONPCBFLAG		0x00000040
+#define RUBBERBANDFLAG        0x00000010
+#define    DESCRIPTIONFLAG        0x00000020
+#define    NAMEONPCBFLAG        0x00000040
 #define AUTODRCFLAG             0x00000080
-#define	ALLDIRECTIONFLAG	0x00000100
+#define    ALLDIRECTIONFLAG    0x00000100
 #define SWAPSTARTDIRFLAG        0x00000200
-#define UNIQUENAMEFLAG		0x00000400
-#define CLEARNEWFLAG		0x00000800
+#define UNIQUENAMEFLAG        0x00000400
+#define CLEARNEWFLAG        0x00000800
 #define SNAPPINFLAG             0x00001000
 #define SHOWMASKFLAG            0x00002000
 #define THINDRAWFLAG            0x00004000
@@ -315,31 +315,31 @@ When set, element names are not drawn.
 /* ---------------------------------------------------------------------------
  * object types
  */
-#define	NO_TYPE			0x00000	/* no object */
-#define	VIA_TYPE		0x00001
-#define	ELEMENT_TYPE		0x00002
-#define	LINE_TYPE		0x00004
-#define	POLYGON_TYPE		0x00008
-#define	TEXT_TYPE		0x00010
-#define RATLINE_TYPE		0x00020
+#define    NO_TYPE            0x00000    /* no object */
+#define    VIA_TYPE        0x00001
+#define    ELEMENT_TYPE        0x00002
+#define    LINE_TYPE        0x00004
+#define    POLYGON_TYPE        0x00008
+#define    TEXT_TYPE        0x00010
+#define RATLINE_TYPE        0x00020
 
-#define	PIN_TYPE		0x00100	/* objects that are part */
-#define	PAD_TYPE		0x00200	/* 'pin' of SMD element */
-#define	ELEMENTNAME_TYPE	0x00400	/* of others */
-#define	POLYGONPOINT_TYPE	0x00800
-#define	LINEPOINT_TYPE		0x01000
+#define    PIN_TYPE        0x00100    /* objects that are part */
+#define    PAD_TYPE        0x00200    /* 'pin' of SMD element */
+#define    ELEMENTNAME_TYPE    0x00400    /* of others */
+#define    POLYGONPOINT_TYPE    0x00800
+#define    LINEPOINT_TYPE        0x01000
 #define ELEMENTLINE_TYPE        0x02000
 #define ARC_TYPE                0x04000
-#define ELEMENTARC_TYPE		0x08000
+#define ELEMENTARC_TYPE        0x08000
 
-#define LOCKED_TYPE 		0x10000	/* used to tell search to include locked items. */
-#define NET_TYPE		0x20000 /* used to select whole net. */
-#define ARCPOINT_TYPE		0x40000
+#define LOCKED_TYPE         0x10000    /* used to tell search to include locked items. */
+#define NET_TYPE        0x20000 /* used to select whole net. */
+#define ARCPOINT_TYPE        0x40000
 
 #define PIN_TYPES     (VIA_TYPE | PIN_TYPE)
 #define LOCK_TYPES    (VIA_TYPE | LINE_TYPE | ARC_TYPE | POLYGON_TYPE | ELEMENT_TYPE \
                       | TEXT_TYPE | ELEMENTNAME_TYPE | LOCKED_TYPE)
 
-#define	ALL_TYPES		(~0)	/* all bits set */
+#define    ALL_TYPES        (~0)    /* all bits set */
 
 #endif

@@ -17,31 +17,36 @@ HID_DRAW QtHID::QtGraphics;
 QtHID::QtHID(QWidget *Parent)
 {
 /* Default Zoom Level */
-zoom = 1;
+ppx = 6000;
 tx = 0;
 ty = 0;
 
-/* Default Pixels Per X */
-ppx = 1 / zoom;
+/* Default GL Coordinates per pixel */
+zoom = 1/ppx;
+
+/* Setup some default colors */
+qport.Offlimit_color = new QColor("Black");
+qport.Background_color = new QColor("Black");
 
 
 setMouseTracking(true);
-qtGreen = QColor::fromRgbF(0,0,0,0);
-
 setFocusPolicy(Qt::StrongFocus);
+
+this->setContextMenuPolicy(Qt::CustomContextMenu);
 
 }
 
 /* Destructor */
 QtHID::~QtHID()
 {
-
+delete[] qport.Offlimit_color;
+delete[] qport.Background_color;
 }
 
 
 void QtHID::initializeGL()
 {
-qglClearColor(qtGreen.dark());
+
 }
 /** @brief Instantiates a new HID object and registers it
  *         with the PCB framework.
@@ -51,29 +56,95 @@ qglClearColor(qtGreen.dark());
  */
 void QtHID::init_interface( HID* intf )
 {
-intf->struct_size              = sizeof (HID);
-intf->name                     = "qt";
-intf->description              = "Qt Interface";
-intf->gui                      = 1;
-intf->poly_after               = 1;
+intf->struct_size                  = sizeof (HID);
+intf->name                         = "qt";
+intf->description                  = "Qt Interface";
+intf->gui                          = 1;
+intf->poly_after                   = 1;
 
-intf->parse_arguments          = parse_arguments;
-intf->logv                     = logger;
-intf->graphics                 = &QtGraphics;
-intf->graphics->make_gc        = make_gc;
-intf->graphics->set_color      = set_color;
-intf->graphics->set_line_cap   = set_line_cap;
-intf->graphics->draw_line      = draw_a_line;
-intf->notify_crosshair_change  = update_widget;
-intf->set_crosshair            = set_crosshair;
-intf->graphics->set_draw_xor   = set_draw_xor;
-intf->graphics->set_line_width = set_line_width;
+intf->parse_arguments              = parse_arguments;
+intf->logv                         = logger;
+intf->set_layer                    = stub_set_layer;
+intf->end_layer                    = stub_end_layer;
+intf->shift_is_pressed             = shift_is_pressed;
+intf->invalidate_lr                = invalidate_lr;
+intf->graphics                     = &QtGraphics;
+intf->graphics->make_gc            = make_gc;
+intf->graphics->destroy_gc         = destory_gc;
+intf->graphics->set_color          = set_color;
+intf->graphics->set_line_cap       = set_line_cap;
+intf->graphics->draw_line          = draw_a_line;
+intf->graphics->draw_rect          = draw_a_rect;
+intf->graphics->draw_arc           = intf_draw_arc;
+intf->graphics->fill_circle        = intf_fill_circle;
+intf->notify_crosshair_change      = update_widget;
+intf->set_crosshair                = set_crosshair;
+intf->graphics->set_draw_xor       = set_draw_xor;
+intf->graphics->set_line_width     = set_line_width;
+
+/* Setup some common draw helper functions */
+common_draw_helpers_init( intf->graphics );
 
 /* Store pointer to the HID object */
 QtHID::pIntf = intf;
 
 QtHID::pMe = this;
 }
+
+void QtHID::intf_draw_arc(hidGC gc, Coord cx, Coord cy, Coord xradius, Coord yradius, Angle start_angle, Angle delta_angle)
+{
+QtHID::set_color( gc, gc->colorname );
+QtHID::pMe->draw_arc( gc->width, cx, cy, xradius, yradius, start_angle, delta_angle, QtHID::pMe->ppx );
+}
+void QtHID::intf_fill_circle (hidGC gc, Coord cx, Coord cy, Coord radius )
+{
+QtHID::set_color( gc, gc->colorname );
+QtHID::pMe->fill_circle( cx, cy, radius, 1 );
+}
+
+void QtHID::invalidate_lr( int left_, int right_, int top_, int bottom_ )
+{
+QRect region(left_, top_, right_ - left_, bottom_ - top_ );
+QtHID::pMe->update( region );
+
+}
+
+int QtHID::shift_is_pressed( void )
+{
+return( false );
+}
+void QtHID::destory_gc( hidGC gc )
+{
+free( gc );
+}
+
+void QtHID::draw_a_rect( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 )
+{
+QtHID::set_color( gc, gc->colorname );
+QtHID::pMe->draw_rect( x1, y1, x2, y2 );
+}
+
+void QtHID::draw_rect( Coord x1, Coord y1, Coord x2, Coord y2 )
+{
+glBegin (GL_LINE_LOOP);
+glVertex3f (x1, y1, 1);
+glVertex3f (x1, y2, 1);
+glVertex3f (x2, y2, 1);
+glVertex3f (x2, y1, 1);
+glEnd ();
+}
+
+void QtHID::stub_end_layer( void )
+{
+//TODO
+}
+
+int QtHID::stub_set_layer( const char *name_, int group_, int _empty )
+{
+return( true );
+//TODO
+}
+
 /**
  * @brief  Build a new Graphic Context object
  *         which will hold the contextual state
@@ -132,7 +203,32 @@ void QtHID::logger( const char *fmt, va_list args )
  */
 void QtHID::set_color(hidGC gc, const char *name)
 {
+double r,g,b,a;
+
 gc->colorname = name;
+
+if (strcmp (gc->colorname, "drill") == 0)
+    {
+    r = QtHID::pMe->qport.Offlimit_color->redF();
+    g = QtHID::pMe->qport.Offlimit_color->greenF();
+    b = QtHID::pMe->qport.Offlimit_color->blueF();
+    a = 0.85;
+    }
+else if (strcmp (gc->colorname, "erase") == 0)
+    {
+    r = QtHID::pMe->qport.Background_color->redF();
+    g = QtHID::pMe->qport.Background_color->greenF();
+    b = QtHID::pMe->qport.Background_color->blueF();
+    a = 1.0;
+    }
+else
+    {
+    QColor   Color( gc->colorname );
+    Color.getRgbF( &r, &g, &b, &a );
+    }
+
+QtHID::pMe->flush_triangles(&QtHID::pMe->buffer);
+glColor4d (r, g, b, a);
 } /* set_color() */
 
 /**
@@ -149,6 +245,7 @@ gc->cap = style;
 
 void QtHID::draw_a_line( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 )
 {
+QtHID::set_color( gc, gc->colorname );
 QtHID::pMe->draw_line( gc->cap, gc->width, x1, y1, x2, y2, 1 );
 }
 
@@ -266,6 +363,42 @@ int QtHID::calc_slices (float pix_radius, float sweep_angle )
   return (int)ceilf (slices);
 }
 
+void QtHID::fill_circle (Coord vx, Coord vy, Coord vr, double scale)
+{
+#define MIN_TRIANGLES_PER_CIRCLE 6
+#define MAX_TRIANGLES_PER_CIRCLE 360
+  float last_x, last_y;
+  float radius = vr;
+  int slices;
+  int i;
+
+  slices = calc_slices (vr / scale, 2 * M_PI);
+
+  if (slices < MIN_TRIANGLES_PER_CIRCLE)
+    slices = MIN_TRIANGLES_PER_CIRCLE;
+
+  if (slices > MAX_TRIANGLES_PER_CIRCLE)
+    slices = MAX_TRIANGLES_PER_CIRCLE;
+
+if( !check_triangle_space (&buffer, slices) )
+  {
+  /* Very bad error */
+  exit( 1 );
+  }
+
+  last_x = vx + vr;
+  last_y = vy;
+
+  for (i = 0; i < slices; i++) {
+    float x, y;
+    x = radius * cosf (((float)(i + 1)) * 2. * M_PI / (float)slices) + vx;
+    y = radius * sinf (((float)(i + 1)) * 2. * M_PI / (float)slices) + vy;
+    add_triangle (&buffer, vx, vy, last_x, last_y, x, y);
+    last_x = x;
+    last_y = y;
+  }
+}
+
 #define MIN_SLICES_PER_ARC 6
 #define MAX_SLICES_PER_ARC 360
 
@@ -292,7 +425,7 @@ void QtHID::draw_arc
     Coord       ry,              // Unused!
     Angle       start_angle,     // Start angle
     Angle       delta_angle,     // Degrees to sweep the arc
-    double      scale            // Current scale factor
+    float       scale            // Current scale factor
     )
 {
 /* Local Variables */
@@ -384,6 +517,11 @@ for (i = 1; i <= slices; i++)
     outer_x = -outer_r * cos_ang + x;
     outer_y = outer_r * sin_ang + y;
 
+    if( width == scale  && i == 1)
+        {
+        printf("diff: %d\n", x);
+        }
+
     /* Triangle Layout Diagram             */
     /*    inner(x,y)                       */
     /*     ________                        */
@@ -457,8 +595,6 @@ if (buffer->triangle_count != 0)
     /* Draw the array as triangles */
     glDrawArrays (GL_TRIANGLES, 0, buffer->triangle_count * 3);
 
-    glScalef( this->zoom, this->zoom, 0 );
-
     /* Disable the vertex array */
     glDisableClientState (GL_VERTEX_ARRAY);
 
@@ -525,7 +661,7 @@ void QtHID::draw_line(int cap, Coord width, Coord x1, Coord y1, Coord x2, Coord 
                                    x1 + wdx, y1 + wdy);
 
     /* Don't bother capping hairlines */
-    if (circular_caps && !hairline)	    {
+    if (circular_caps && !hairline)        {
         draw_cap (width, x1, y1, angle + 90., scale);
         draw_cap (width, x2, y2, angle - 90., scale);
       }
@@ -565,8 +701,8 @@ bool moved;
 Coord x, y;
 
 /* Grab new mouse coordinates */
-x = (Coord)e->x();
-y = (Coord)e->y();
+x = (Coord)( ( e->x() - tx ) / zoom ) ;
+y = (Coord)( ( e->y() - ty ) / zoom );
 
 /* Notify framework of change */
 moved = MoveCrosshairAbsolute(x, y);
@@ -579,7 +715,7 @@ void QtHID::wheelEvent ( QWheelEvent * e )
 float Glx;
 float Gly;
 
-#define    ZOOM_PER_WHEEL_CLICK        ( 0.1 )
+#define    ZOOM_PER_WHEEL_CLICK        ( zoom * 0.1 )
 int delta;
 int sign;
 float zoom_change;
@@ -614,11 +750,13 @@ this->updateGL();
 void QtHID::mousePressEvent( QMouseEvent* e )
 {
 printf("Button %d\n", e->button() );
+
+do_mouse_action( e->button(), 0 );
 }
 
 void QtHID::keyPressEvent( QKeyEvent *e )
 {
-QPoint *	point;
+QPoint *    point;
 
 point = NULL;
 
@@ -674,30 +812,33 @@ glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 glColor3f( 1.0f, 1.0f, 1.0f );
 glMatrixMode (GL_PROJECTION);
 glLoadIdentity ();
-
 glOrtho (0, this->width(), this->height(), 0, 0, 100);
-
 glMatrixMode (GL_MODELVIEW);
 
+/* Scale and move the point under the cursur back to the origin spot */
 glTranslatef( tx, ty, 0.0f );
 glScalef (zoom, zoom, 0 );
 
-region.X1 = 0;
-region.Y1 = 0;
-region.X2 = this->width();
-region.Y2 = this->height();
+/* Calculate the viewable region */
+region.X1 = -tx * ppx;
+region.Y1 = -ty * ppx;
+region.X2 = ( this->width() - tx ) * ppx;
+region.Y2 = ( this->height() -ty ) * ppx;
 
-
+/* Draw the grid */
 hidgl_draw_grid ( &region );
-draw_arc(6, 300, 300, 10, 10, 0, 360, 1 );
-this->draw_arc( 30, 200, 200, 40, 0, 0, 360, 1 );
-this->draw_arc( 30, 400, 200, 40, 0, 0, 360, 1 );
-this->draw_line( Round_Cap, 5, 300,300,500,300, 1 );
-//DrawAttached();
+
+/* Draw anything attached to the crosshairs */
+DrawAttached();
 this->flush_triangles( &buffer );
 
+/* Draw all elements within the view */
+hid_expose_callback( this->pIntf, &region, 0);
+this->flush_triangles( &buffer );
+
+/* Draw the crosshairs */
 Drawcrosshairs();
-}
+} /* paintGL() */
 
 void QtHID::Drawcrosshairs(void)
 {
@@ -727,9 +868,6 @@ glLoadIdentity ();
 
 glBegin (GL_LINES);
 
-//x = x/this->width();
-//y = y/this->height();
-
 draw_right_cross (x, y, z);
 
 if (Crosshair.shape == Union_Jack_Crosshair_Shape)
@@ -746,8 +884,9 @@ glDisable (GL_COLOR_LOGIC_OP);
 
 void QtHID::setcrosshairs( int x, int y )
 {
-qport.x = x;
-qport.y = y;
+/* Convert the OpenGL point to a qt point */
+qport.x = ( x * zoom ) + tx;
+qport.y = ( y * zoom ) + ty;
 
 }
 
@@ -877,10 +1016,10 @@ void QtHID::hidgl_draw_grid (BoxType *drawn_area)
       glLogicOp (GL_XOR);
       glColor3f( 1.0f, 1.0f, 1.0f );
 
-  x1 = GridFit (MAX (0, drawn_area->X1), 25/*PCB->Grid*/ , PCB->GridOffsetX);
-  y1 = GridFit (MAX (0, drawn_area->Y1), 25/*PCB->Grid*/ , PCB->GridOffsetY);
-  x2 = GridFit (MIN (PCB->MaxWidth, drawn_area->X2), 25/*PCB->Grid*/ , PCB->GridOffsetX);
-  y2 = GridFit (MIN (PCB->MaxHeight, drawn_area->Y2), 25/*PCB->Grid*/ , PCB->GridOffsetY);
+  x1 = GridFit (MAX (-tx/zoom, drawn_area->X1), PCB->Grid , PCB->GridOffsetX);
+  y1 = GridFit (MAX (-ty/zoom, drawn_area->Y1), PCB->Grid , PCB->GridOffsetY);
+  x2 = GridFit (MIN (PCB->MaxWidth, drawn_area->X2), PCB->Grid , PCB->GridOffsetX);
+  y2 = GridFit (MIN (PCB->MaxHeight, drawn_area->Y2), PCB->Grid , PCB->GridOffsetY);
 
   if (x1 > x2)
     {
@@ -896,7 +1035,7 @@ void QtHID::hidgl_draw_grid (BoxType *drawn_area)
       y2 = tmp;
     }
 
-  n = (int) ((x2 - x1) / /*PCB->Grid*/ 25 + 0.5) + 1;
+  n = (int) ((x2 - x1) / PCB->Grid + 0.5) + 1;
   if (n > npoints)
     {
       npoints = n + 10;
@@ -907,13 +1046,13 @@ void QtHID::hidgl_draw_grid (BoxType *drawn_area)
   glVertexPointer (3, GL_FLOAT, 0, points);
 
   n = 0;
-  for (x = x1; x <= x2; x += /*PCB->Grid*/25)
+  for (x = x1; x <= x2; x += PCB->Grid)
     {
       points[3 * n + 0] = x;
       points[3 * n + 2] = 0;
       n++;
     }
-  for (y = y1; y <= y2; y += /*PCB->Grid*/25)
+  for (y = y1; y <= y2; y += PCB->Grid)
     {
       for (i = 0; i < n; i++)
       {
@@ -939,7 +1078,14 @@ Coord QtHID::GridFit (Coord x, Coord grid_spacing, Coord grid_offset)
 
 void QtHID::valueChanged(bool value)
 {
-    printf("one clicked %d\n", value);
+  if( TRUE == value )
+    {
+    SetMode( VIA_MODE );
+    }
+  else
+    {
+    SetMode( NO_MODE );
+    }
 }
 
 #include "qthid.moc"

@@ -13,12 +13,16 @@
 #include "crosshair.h"
 #include "error.h"
 #include "hid_draw.h"
+#include "hid/common/hid_resource.h"
+#include "hid/common/draw_helpers.h"
 #include "gui.h"
+#include "set.h"
 #include <QApplication>
 #include <QGLWidget>
 #include <QWidget>
 #include <QMouseEvent>
 #include <QGLPixelBuffer>
+#include<QColor>
 #include <QObject>
 
 /*-----------------------------------------------
@@ -56,6 +60,9 @@ class DrawPort
 public:
   int x;
   int y;
+  QColor *   Offlimit_color;
+  QColor *   Background_color;
+
 };
 
 class QtHID : public QGLWidget
@@ -87,7 +94,7 @@ private:
 
     /* Private Variables */
     triangle_buffer     buffer;
-    QColor 	            qtGreen;
+    QColor              qtGreen;
     DrawPort            qport;
     Geometry *          geom;
     Cube *              cube;
@@ -108,6 +115,14 @@ private:
     static void     set_crosshair      ( int x, int y, int action );
     static void     set_draw_xor       ( hidGC gc, int xor_ );
     static void     set_line_width     ( hidGC gc, Coord width );
+    static int      stub_set_layer     (const char *name_, int group_, int _empty);
+    static void     stub_end_layer     ( void );
+    static void     draw_a_rect        ( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 );
+    static void     destory_gc         ( hidGC gc );
+    static int      shift_is_pressed   ( void );
+    static void     invalidate_lr      ( int left_, int right_, int top_, int bottom_ );
+    static void     intf_fill_circle   (hidGC gc, Coord cx, Coord cy, Coord radius );
+    static void     intf_draw_arc      (hidGC gc, Coord cx, Coord cy, Coord xradius, Coord yradius, Angle start_angle, Angle delta_angle );
 
     /* Private member Functions */
     void            wheelEvent         ( QWheelEvent * e );
@@ -121,7 +136,7 @@ private:
     bool            check_triangle_space( triangle_buffer *buffer, int count );
     int             calc_slices        (float pix_radius, float sweep_angle );
     void            Drawcrosshairs     ( void );
-    void            draw_arc           ( Coord width, Coord x, Coord y, Coord rx, Coord ry, Angle start_angle, Angle delta_angle, double scale );
+    void            draw_arc           ( Coord width, Coord x, Coord y, Coord rx, Coord ry, Angle start_angle, Angle delta_angle, float scale );
     void            draw_slanted_cross (int x, int y, int z );
     void            draw_dozen_cross   ( int x, int y, int z );
     void            draw_cap           ( Coord width, Coord x, Coord y, Angle angle, double scale );
@@ -133,6 +148,8 @@ private:
     void            add_triangle       ( triangle_buffer *buffer, float x1, float y1, float x2, float y2, float x3, float y3 );
     void            add_triangle_3D    ( triangle_buffer *buffer, GLfloat x1, GLfloat y1, GLfloat z1, GLfloat x2, GLfloat y2, GLfloat z2, GLfloat x3, GLfloat y3, GLfloat z3 );
     void            flush_triangles    ( triangle_buffer *buffer );
+    void            draw_rect          ( Coord x1, Coord y1, Coord x2, Coord y2 );
+    void            fill_circle        ( Coord vx, Coord vy, Coord vr, double scale );
 };
 
 

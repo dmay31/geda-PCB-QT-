@@ -73,17 +73,17 @@ SetGrid (Coord Grid, bool align)
   if (Grid >= 1 && Grid <= MAX_GRID)
     {
       if (align)
-	{
-	  PCB->GridOffsetX = Crosshair.X % Grid;
-	  PCB->GridOffsetY = Crosshair.Y % Grid;
-	}
+  {
+    PCB->GridOffsetX = Crosshair.X % Grid;
+    PCB->GridOffsetY = Crosshair.Y % Grid;
+  }
       PCB->Grid = Grid;
       grid_string = pcb_g_strdup_printf ("%mr", Grid);
       if (grid_string)
         AttributePut (PCB, "PCB::grid::size", grid_string);
       g_free (grid_string);
       if (Settings.DrawGrid)
-	Redraw ();
+  Redraw ();
     }
 }
 
@@ -97,7 +97,7 @@ SetLineSize (Coord Size)
     {
       Settings.LineThickness = Size;
       if (TEST_FLAG (AUTODRCFLAG, PCB))
-	FitCrosshairIntoGrid (Crosshair.X, Crosshair.Y);
+  FitCrosshairIntoGrid (Crosshair.X, Crosshair.Y);
     }
 }
 
@@ -108,8 +108,8 @@ void
 SetViaSize (Coord Size, bool Force)
 {
   if (Force || (Size <= MAX_PINORVIASIZE &&
-		Size >= MIN_PINORVIASIZE &&
-		Size >= Settings.ViaDrillingHole + MIN_PINORVIACOPPER))
+    Size >= MIN_PINORVIASIZE &&
+    Size >= Settings.ViaDrillingHole + MIN_PINORVIACOPPER))
     {
       Settings.ViaThickness = Size;
     }
@@ -122,8 +122,8 @@ void
 SetViaDrillingHole (Coord Size, bool Force)
 {
   if (Force || (Size <= MAX_PINORVIASIZE &&
-		Size >= MIN_PINORVIAHOLE &&
-		Size <= Settings.ViaThickness - MIN_PINORVIACOPPER))
+    Size >= MIN_PINORVIAHOLE &&
+    Size <= Settings.ViaThickness - MIN_PINORVIACOPPER))
     {
       Settings.ViaDrillingHole = Size;
     }
@@ -176,7 +176,7 @@ SetChangedFlag (bool New)
 }
 
 /* ---------------------------------------------------------------------------
- * sets the crosshair range to the current buffer extents 
+ * sets the crosshair range to the current buffer extents
  */
 void
 SetCrosshairRangeToBuffer (void)
@@ -185,11 +185,11 @@ SetCrosshairRangeToBuffer (void)
     {
       SetBufferBoundingBox (PASTEBUFFER);
       SetCrosshairRange (PASTEBUFFER->X - PASTEBUFFER->BoundingBox.X1,
-			 PASTEBUFFER->Y - PASTEBUFFER->BoundingBox.Y1,
-			 PCB->MaxWidth -
-			 (PASTEBUFFER->BoundingBox.X2 - PASTEBUFFER->X),
-			 PCB->MaxHeight -
-			 (PASTEBUFFER->BoundingBox.Y2 - PASTEBUFFER->Y));
+       PASTEBUFFER->Y - PASTEBUFFER->BoundingBox.Y1,
+       PCB->MaxWidth -
+       (PASTEBUFFER->BoundingBox.X2 - PASTEBUFFER->X),
+       PCB->MaxHeight -
+       (PASTEBUFFER->BoundingBox.Y2 - PASTEBUFFER->Y));
     }
 }
 
@@ -253,14 +253,14 @@ SetMode (int Mode)
   if (PCB->RatDraw)
     {
       if (Mode == ARC_MODE || Mode == RECTANGLE_MODE ||
-	  Mode == VIA_MODE || Mode == POLYGON_MODE ||
-	  Mode == POLYGONHOLE_MODE ||
-	  Mode == TEXT_MODE || Mode == INSERTPOINT_MODE ||
-	  Mode == THERMAL_MODE)
-	{
-	  Message (_("That mode is NOT allowed when drawing ratlines!\n"));
-	  Mode = NO_MODE;
-	}
+    Mode == VIA_MODE || Mode == POLYGON_MODE ||
+    Mode == POLYGONHOLE_MODE ||
+    Mode == TEXT_MODE || Mode == INSERTPOINT_MODE ||
+    Mode == THERMAL_MODE)
+  {
+    Message (_("That mode is NOT allowed when drawing ratlines!\n"));
+    Mode = NO_MODE;
+  }
     }
   if (Settings.Mode == LINE_MODE && Mode == ARC_MODE &&
       Crosshair.AttachedLine.State != STATE_FIRST)
@@ -268,20 +268,20 @@ SetMode (int Mode)
       Crosshair.AttachedLine.State = STATE_FIRST;
       Crosshair.AttachedBox.State = STATE_SECOND;
       Crosshair.AttachedBox.Point1.X = Crosshair.AttachedBox.Point2.X =
-	Crosshair.AttachedLine.Point1.X;
+  Crosshair.AttachedLine.Point1.X;
       Crosshair.AttachedBox.Point1.Y = Crosshair.AttachedBox.Point2.Y =
-	Crosshair.AttachedLine.Point1.Y;
+  Crosshair.AttachedLine.Point1.Y;
       AdjustAttachedObjects ();
     }
   else if (Settings.Mode == ARC_MODE && Mode == LINE_MODE &&
-	   Crosshair.AttachedBox.State != STATE_FIRST)
+     Crosshair.AttachedBox.State != STATE_FIRST)
     {
       Crosshair.AttachedBox.State = STATE_FIRST;
       Crosshair.AttachedLine.State = STATE_SECOND;
       Crosshair.AttachedLine.Point1.X = Crosshair.AttachedLine.Point2.X =
-	Crosshair.AttachedBox.Point1.X;
+  Crosshair.AttachedBox.Point1.X;
       Crosshair.AttachedLine.Point1.Y = Crosshair.AttachedLine.Point2.Y =
-	Crosshair.AttachedBox.Point1.Y;
+  Crosshair.AttachedBox.Point1.Y;
       Settings.Mode = Mode;
       AdjustAttachedObjects ();
     }
@@ -295,17 +295,17 @@ SetMode (int Mode)
   else
     {
       if (Settings.Mode == ARC_MODE || Settings.Mode == LINE_MODE)
-	SetLocalRef (0, 0, false);
+  SetLocalRef (0, 0, false);
       Crosshair.AttachedBox.State = STATE_FIRST;
       Crosshair.AttachedLine.State = STATE_FIRST;
       if (Mode == LINE_MODE && TEST_FLAG (AUTODRCFLAG, PCB))
-	{
-	  if (ClearFlagOnAllObjects (true, CONNECTEDFLAG | FOUNDFLAG))
-	    {
-	      IncrementUndoSerialNumber ();
-	      Draw ();
-	    }
-	}
+  {
+    if (ClearFlagOnAllObjects (true, CONNECTEDFLAG | FOUNDFLAG))
+      {
+        IncrementUndoSerialNumber ();
+        Draw ();
+      }
+  }
     }
 
   Settings.Mode = Mode;
@@ -334,9 +334,9 @@ SetRouteStyle (char *name)
   {
     if (name && NSTRCMP (name, style->Name) == 0)
       {
-	sprintf (num, "%d", n + 1);
-	hid_actionl ("RouteStyle", num, NULL);
-	break;
+  sprintf (num, "%d", n + 1);
+  hid_actionl ("RouteStyle", num, NULL);
+  break;
       }
   }
   END_LOOP;
@@ -352,7 +352,7 @@ SetLocalRef (Coord X, Coord Y, bool Showing)
     {
       notify_mark_change (false);
       if (count == 0)
-	old = Marked;
+  old = Marked;
       Marked.X = X;
       Marked.Y = Y;
       Marked.status = true;

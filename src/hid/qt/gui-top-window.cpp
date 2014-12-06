@@ -5,7 +5,6 @@
  *      Author: dale
  */
 
-#include <QWidget>
 #include <QtCore>
 #include <QListWidget>
 #include <QListWidgetItem>
@@ -20,6 +19,9 @@
 #include "gui-top_window.h"
 #include "pcb-printf.h"
 
+extern "C" {
+#include "gpcb-menu.h"
+}
 /* Variables */
 static QApplication* App;
 static QtHID*        qHID;
@@ -69,11 +71,16 @@ App->exec();
 /* Constructor */
 Top_Window::Top_Window()
 {
-	QMenu * MenuPtr;
-    QTextEdit*	console = new QTextEdit;
+const Resource *r = 0, *bir;
+const Resource *mr;
+
+
+    QMenu * MenuPtr;
+    QTextEdit*    console = new QTextEdit;
     QListWidget* table = new QListWidget;
     QListWidgetItem* item = new QListWidgetItem;
     QAction * ViaButton;
+    QAction * RemoveButton;
 
     QDockWidget *leftDock = new QDockWidget( tr("Layers"), this );
     QDockWidget *dockConsole = new QDockWidget( tr("Console"), this);
@@ -81,8 +88,11 @@ Top_Window::Top_Window()
     QVBoxLayout* buttonlayout = new QVBoxLayout;
 
     QToolBar* sideToolbar = new QToolBar;
-    ViaButton = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", glObj, SLOT( valueChanged(bool) ) );
+    ViaButton    = sideToolbar->addAction( QIcon::fromTheme("document-new"), "VIA", qHID, SLOT( valueChanged(bool) ) );
+    RemoveButton = sideToolbar->addAction( QIcon::fromTheme("delete"), "Remove", qHID, SLOT( valueChanged(bool) ) );
+
     ViaButton->setCheckable( TRUE );
+    RemoveButton->setCheckable( TRUE );
 
     this->addToolBar(Qt::LeftToolBarArea, sideToolbar);
 
@@ -119,13 +129,18 @@ Top_Window::Top_Window()
     MenuPtr->addAction("Cut");
 
     /* Add a Toolbar to the Main Window */
-	MyToolBar = this->addToolBar("Main Toolbar");
+    MyToolBar = this->addToolBar("Main Toolbar");
     MyToolBar->setGeometry(0,0,200,20);
     MyToolBar->addAction( QIcon::fromTheme("document-new"), "New Layout" );
     MyToolBar->addAction( QIcon::fromTheme("document-open"), "Open File");
     MyToolBar->addAction( QIcon::fromTheme("document-save"), "Save File");
     MyToolBar->addSeparator();
     MyToolBar->addSeparator();
+
+    bir = resource_parse (0, gpcb_menu_default);
+    mr = resource_subres (bir, "Mouse");
+    if (mr)
+      load_mouse_resource (mr);
 
 
     this->setWindowTitle("gEDA PCB");

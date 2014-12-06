@@ -2,6 +2,10 @@
 #ifndef PCB_HID_COMMON_HID_RESOURCE_H
 #define PCH_HID_COMMON_HID_RESOURCE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "resource.h"
 
 #define M_Shift   1
@@ -13,5 +17,9 @@
 
 void load_mouse_resource (const Resource *res);
 void do_mouse_action (int button, int mods);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

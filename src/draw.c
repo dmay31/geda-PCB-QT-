@@ -60,11 +60,11 @@
 #define MAXINT (((unsigned int)(~0))>>1)
 #endif
 
-#define	SMALL_SMALL_TEXT_SIZE	0
-#define	SMALL_TEXT_SIZE			1
-#define	NORMAL_TEXT_SIZE		2
-#define	LARGE_TEXT_SIZE			3
-#define	N_TEXT_SIZES			4
+#define    SMALL_SMALL_TEXT_SIZE    0
+#define    SMALL_TEXT_SIZE            1
+#define    NORMAL_TEXT_SIZE        2
+#define    LARGE_TEXT_SIZE            3
+#define    N_TEXT_SIZES            4
 
 
 /* ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ Draw (void)
   Block.X2 = Block.Y2 = -MAXINT;
 }
 
-/* ---------------------------------------------------------------------- 
+/* ----------------------------------------------------------------------
  * redraws all the data by the event handlers
  */
 void
@@ -556,10 +556,10 @@ DrawEverything (const BoxType *drawn_area)
       LayerType *l = LAYER_ON_STACK (i);
       int group = GetLayerGroupNumberByNumber (LayerStack[i]);
       if (l->On && !do_group[group])
-	{
-	  do_group[group] = 1;
-	  drawn_groups[ngroups++] = group;
-	}
+    {
+    do_group[group] = 1;
+    drawn_groups[ngroups++] = group;
+    }
     }
 
   top_group = GetLayerGroupNumberBySide (TOP_SIDE);
@@ -573,11 +573,11 @@ DrawEverything (const BoxType *drawn_area)
     {
       side = SWAP_IDENT ? TOP_SIDE : BOTTOM_SIDE;
       if (PCB->ElementOn)
-	{
-	  r_search (PCB->Data->element_tree, drawn_area, NULL, element_callback, &side);
-	  r_search (PCB->Data->name_tree[NAME_INDEX (PCB)], drawn_area, NULL, name_callback, &side);
-	  DrawLayer (&(PCB->Data->Layer[max_copper_layer + side]), drawn_area);
-	}
+    {
+    r_search (PCB->Data->element_tree, drawn_area, NULL, element_callback, &side);
+    r_search (PCB->Data->name_tree[NAME_INDEX (PCB)], drawn_area, NULL, name_callback, &side);
+    DrawLayer (&(PCB->Data->Layer[max_copper_layer + side]), drawn_area);
+    }
       r_search (PCB->Data->pad_tree, drawn_area, NULL, pad_callback, &side);
       gui->end_layer ();
     }
@@ -616,7 +616,8 @@ DrawEverything (const BoxType *drawn_area)
           gui->end_layer ();
         }
     }
-
+//EDM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  return;
   /* Draw the solder mask if turned on */
   if (gui->set_layer ("componentmask", SL (MASK, TOP), 0))
     {
@@ -646,8 +647,8 @@ DrawEverything (const BoxType *drawn_area)
     {
       /* Draw element Marks */
       if (PCB->PinOn)
-	r_search (PCB->Data->element_tree, drawn_area, NULL, EMark_callback,
-		  NULL);
+    r_search (PCB->Data->element_tree, drawn_area, NULL, EMark_callback,
+        NULL);
       /* Draw rat lines on top */
       if (gui->set_layer ("rats", SL (RATS, 0), 0))
         {
@@ -700,9 +701,9 @@ DrawEMark (ElementType *e, Coord X, Coord Y, bool invisible)
     {
       PinType *pin0 = e->Pin->data;
       if (TEST_FLAG (HOLEFLAG, pin0))
-	mark_size = MIN (mark_size, pin0->DrillingHole / 2);
+    mark_size = MIN (mark_size, pin0->DrillingHole / 2);
       else
-	mark_size = MIN (mark_size, pin0->Thickness / 2);
+    mark_size = MIN (mark_size, pin0->Thickness / 2);
     }
 
   if (e->Pad != NULL)
@@ -712,7 +713,7 @@ DrawEMark (ElementType *e, Coord X, Coord Y, bool invisible)
     }
 
   gui->graphics->set_color (Output.fgGC,
-		  invisible ? PCB->InvisibleMarkColor : PCB->ElementColor);
+        invisible ? PCB->InvisibleMarkColor : PCB->ElementColor);
   gui->graphics->set_line_cap (Output.fgGC, Trace_Cap);
   gui->graphics->set_line_width (Output.fgGC, 0);
   gui->graphics->draw_line (Output.fgGC, X - mark_size, Y, X, Y - mark_size);
@@ -982,7 +983,7 @@ DrawLayer (LayerType *Layer, const BoxType *screen)
      the "outline" layer.  */
   if (IsLayerEmpty (Layer)
       && (strcmp (Layer->Name, "outline") == 0
-	  || strcmp (Layer->Name, "route") == 0))
+    || strcmp (Layer->Name, "route") == 0))
     {
       gui->graphics->set_color (Output.fgGC, Layer->Color);
       gui->graphics->set_line_width (Output.fgGC, PCB->minWid);
@@ -1482,45 +1483,45 @@ DrawObject (int type, void *ptr1, void *ptr2)
     {
     case VIA_TYPE:
       if (PCB->ViaOn)
-	DrawVia ((PinType *) ptr2);
+    DrawVia ((PinType *) ptr2);
       break;
     case LINE_TYPE:
       if (((LayerType *) ptr1)->On)
-	DrawLine ((LayerType *) ptr1, (LineType *) ptr2);
+    DrawLine ((LayerType *) ptr1, (LineType *) ptr2);
       break;
     case ARC_TYPE:
       if (((LayerType *) ptr1)->On)
-	DrawArc ((LayerType *) ptr1, (ArcType *) ptr2);
+    DrawArc ((LayerType *) ptr1, (ArcType *) ptr2);
       break;
     case TEXT_TYPE:
       if (((LayerType *) ptr1)->On)
-	DrawText ((LayerType *) ptr1, (TextType *) ptr2);
+    DrawText ((LayerType *) ptr1, (TextType *) ptr2);
       break;
     case POLYGON_TYPE:
       if (((LayerType *) ptr1)->On)
-	DrawPolygon ((LayerType *) ptr1, (PolygonType *) ptr2);
+    DrawPolygon ((LayerType *) ptr1, (PolygonType *) ptr2);
       break;
     case ELEMENT_TYPE:
       if (PCB->ElementOn &&
-	  (FRONT ((ElementType *) ptr2) || PCB->InvisibleObjectsOn))
-	DrawElement ((ElementType *) ptr2);
+    (FRONT ((ElementType *) ptr2) || PCB->InvisibleObjectsOn))
+    DrawElement ((ElementType *) ptr2);
       break;
     case RATLINE_TYPE:
       if (PCB->RatOn)
-	DrawRat ((RatType *) ptr2);
+    DrawRat ((RatType *) ptr2);
       break;
     case PIN_TYPE:
       if (PCB->PinOn)
-	DrawPin ((PinType *) ptr2);
+    DrawPin ((PinType *) ptr2);
       break;
     case PAD_TYPE:
       if (PCB->PinOn)
-	DrawPad ((PadType *) ptr2);
+    DrawPad ((PadType *) ptr2);
       break;
     case ELEMENTNAME_TYPE:
       if (PCB->ElementOn &&
-	  (FRONT ((ElementType *) ptr2) || PCB->InvisibleObjectsOn))
-	DrawElementName ((ElementType *) ptr1);
+    (FRONT ((ElementType *) ptr2) || PCB->InvisibleObjectsOn))
+    DrawElementName ((ElementType *) ptr1);
       break;
     }
 }
