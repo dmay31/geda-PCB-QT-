@@ -205,3 +205,13 @@ do_mouse_action (int button, int mod_mask)
       if (hid_parse_actions (action->v[i].value))
         return;
 }
+
+void
+do_key_action( int key )
+{
+char str[10];
+
+sprintf( str, "Text(%d)", key );
+
+hid_parse_actions( str );
+}

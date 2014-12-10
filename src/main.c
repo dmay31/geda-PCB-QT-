@@ -1671,7 +1671,7 @@ InitPaths (char *argv0)
   haspath = 0;
   for (i = 0; i < strlen (argv0) ; i++)
     {
-      if (argv0[i] == PCB_DIR_SEPARATOR_C) 
+      if (argv0[i] == PCB_DIR_SEPARATOR_C )
 	haspath = 1;
     }
 

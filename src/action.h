@@ -27,10 +27,14 @@
 /* prototypes for action routines
  */
 
-#ifndef	PCB_ACTION_H
-#define	PCH_ACTION_H
+#ifndef    PCB_ACTION_H
+#define    PCH_ACTION_H
 
 #include "global.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CLONE_TYPES LINE_TYPE | ARC_TYPE | VIA_TYPE | POLYGON_TYPE
 
@@ -44,5 +48,9 @@ void warpNoWhere (void);
 /* In gui-misc.c */
 bool ActionGetLocation (char *);
 void ActionGetXY (char *);
+
+#ifdef __cplusplus
+ }
+#endif
 
 #endif

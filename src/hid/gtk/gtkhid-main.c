@@ -165,30 +165,30 @@ modified.  The @var{factor} is a floating point number, such as
 @code{1.5} or @code{0.75}.
 
 @table @code
-  
+
 @item +@var{factor}
 Values greater than 1.0 cause the board to be drawn smaller; more of
 the board will be visible.  Values between 0.0 and 1.0 cause the board
 to be drawn bigger; less of the board will be visible.
-  
+
 @item -@var{factor}
 Values greater than 1.0 cause the board to be drawn bigger; less of
 the board will be visible.  Values between 0.0 and 1.0 cause the board
 to be drawn smaller; more of the board will be visible.
- 
+
 @item =@var{factor}
- 
+
 The @var{factor} is an absolute zoom factor; the unit for this value
 is "PCB units per screen pixel".  Since PCB units are 0.01 mil, a
 @var{factor} of 1000 means 10 mils (0.01 in) per pixel, or 100 DPI,
 about the actual resolution of most screens - resulting in an "actual
 size" board.  Similarly, a @var{factor} of 100 gives you a 10x actual
 size.
- 
+
 @end table
- 
+
 Note that zoom factors of zero are silently ignored.
- 
+
 
 
 %end-doc */
@@ -366,7 +366,7 @@ typedef struct
 {
   void (*func) (hidval);
   guint id;
-  hidval user_data;
+  void (*func) (hidval user_data_)
 }
 GuiTimer;
 
@@ -378,12 +378,12 @@ ghid_timer (GuiTimer * timer)
 {
   (*timer->func) (timer->user_data);
   ghid_mode_cursor (Settings.Mode);
-  return FALSE;			/* Turns timer off */
+  return FALSE;            /* Turns timer off */
 }
 
 hidval
 ghid_add_timer (void (*func) (hidval user_data),
-		unsigned long milliseconds, hidval user_data)
+        unsigned long milliseconds, hidval user_data)
 {
   GuiTimer *timer = g_new0 (GuiTimer, 1);
   hidval ret;
@@ -471,7 +471,7 @@ ghid_unwatch_file (hidval data)
 {
   GuiWatch *watch = (GuiWatch*)data.ptr;
 
-  g_io_channel_shutdown( watch->channel, TRUE, NULL ); 
+  g_io_channel_shutdown( watch->channel, TRUE, NULL );
   g_io_channel_unref( watch->channel );
   g_free( watch );
 }
@@ -480,7 +480,7 @@ typedef struct
 {
   GSource source;
   void (*func) (hidval user_data);
-  hidval user_data; 
+  hidval user_data;
 } BlockHookSource;
 
 static gboolean ghid_block_hook_prepare  (GSource     *source,
@@ -519,21 +519,21 @@ ghid_confirm_dialog (char *msg, ...)
     }
 
   dialog = gtk_message_dialog_new (GTK_WINDOW (out->top_window),
-				   (GtkDialogFlags) (GTK_DIALOG_MODAL |
-						     GTK_DIALOG_DESTROY_WITH_PARENT),
-				   GTK_MESSAGE_QUESTION,
-				   GTK_BUTTONS_NONE,
-				   "%s", msg);
+                (GtkDialogFlags) (GTK_DIALOG_MODAL |
+                            GTK_DIALOG_DESTROY_WITH_PARENT),
+                GTK_MESSAGE_QUESTION,
+                GTK_BUTTONS_NONE,
+                "%s", msg);
   gtk_dialog_add_button (GTK_DIALOG (dialog),
-			  cancelmsg, GTK_RESPONSE_CANCEL);
+            cancelmsg, GTK_RESPONSE_CANCEL);
   if (okmsg)
     {
       gtk_dialog_add_button (GTK_DIALOG (dialog),
-			     okmsg, GTK_RESPONSE_OK);
+                okmsg, GTK_RESPONSE_OK);
     }
 
   if(x != -1) {
-  	gtk_window_move(GTK_WINDOW (dialog), x, y);
+    gtk_window_move(GTK_WINDOW (dialog), x, y);
   }
 
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_OK)
@@ -638,8 +638,8 @@ ghid_prompt_for (const char *msg, const char *default_string)
 #ifdef FIXME
 char *
 ghid_fileselect (const char *title, const char *descr,
-		 char *default_file, char *default_ext,
-		 const char *history_tag, int flags)
+        char *default_file, char *default_ext,
+        const char *history_tag, int flags)
 {
   char *rv;
 
@@ -862,8 +862,8 @@ static GtkWidget *attributes_dialog, *attr_table;
 
 static void attributes_delete_callback (GtkWidget *w, void *v);
 
-#define GA_RESPONSE_REVERT	1
-#define GA_RESPONSE_NEW		2
+#define GA_RESPONSE_REVERT    1
+#define GA_RESPONSE_NEW        2
 
 static void
 ghid_attr_set_table_size ()
@@ -877,38 +877,38 @@ ghid_attributes_need_rows (int new_max)
   if (attr_max_rows < new_max)
     {
       if (attr_row)
-	attr_row = (AttrRow *) realloc (attr_row, new_max * sizeof(AttrRow));
+    attr_row = (AttrRow *) realloc (attr_row, new_max * sizeof(AttrRow));
       else
-	attr_row = (AttrRow *) malloc (new_max * sizeof(AttrRow));
+    attr_row = (AttrRow *) malloc (new_max * sizeof(AttrRow));
     }
   while (attr_max_rows < new_max)
     {
       /* add [attr_max_rows] */
       attr_row[attr_max_rows].del = gtk_button_new_with_label (_("del"));
       gtk_table_attach (GTK_TABLE (attr_table), attr_row[attr_max_rows].del,
-			0, 1,
-			attr_max_rows, attr_max_rows+1,
-			(GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
-			GTK_FILL,
-			0, 0);
+            0, 1,
+            attr_max_rows, attr_max_rows+1,
+            (GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
+            GTK_FILL,
+            0, 0);
       g_signal_connect (G_OBJECT (attr_row[attr_max_rows].del), "clicked",
-			G_CALLBACK (attributes_delete_callback), GINT_TO_POINTER (attr_max_rows) );
+            G_CALLBACK (attributes_delete_callback), GINT_TO_POINTER (attr_max_rows) );
 
       attr_row[attr_max_rows].w_name = gtk_entry_new ();
       gtk_table_attach (GTK_TABLE (attr_table), attr_row[attr_max_rows].w_name,
-			1, 2,
-			attr_max_rows, attr_max_rows+1,
-			(GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
-			GTK_FILL,
-			0, 0);
+            1, 2,
+            attr_max_rows, attr_max_rows+1,
+            (GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
+            GTK_FILL,
+            0, 0);
 
       attr_row[attr_max_rows].w_value = gtk_entry_new ();
       gtk_table_attach (GTK_TABLE (attr_table), attr_row[attr_max_rows].w_value,
-			2, 3,
-			attr_max_rows, attr_max_rows+1,
-			(GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
-			GTK_FILL,
-			0, 0);
+            2, 3,
+            attr_max_rows, attr_max_rows+1,
+            (GtkAttachOptions)(GTK_FILL | GTK_EXPAND),
+            GTK_FILL,
+            0, 0);
 
       attr_max_rows ++;
     }
@@ -962,9 +962,9 @@ attributes_delete_callback (GtkWidget *w, void *v)
   for (i=n; i<attr_num_rows-1; i++)
     {
       gtk_entry_set_text (GTK_ENTRY (attr_row[i].w_name),
-			  gtk_entry_get_text (GTK_ENTRY (attr_row[i+1].w_name)));
+            gtk_entry_get_text (GTK_ENTRY (attr_row[i+1].w_name)));
       gtk_entry_set_text (GTK_ENTRY (attr_row[i].w_value),
-			  gtk_entry_get_text (GTK_ENTRY (attr_row[i+1].w_value)));
+            gtk_entry_get_text (GTK_ENTRY (attr_row[i+1].w_value)));
     }
   attr_num_rows --;
 
@@ -987,12 +987,12 @@ ghid_attributes (char *owner, AttributeListType *attrs)
   attr_num_rows = 0;
 
   attributes_dialog = gtk_dialog_new_with_buttons (owner,
-						   GTK_WINDOW (ghid_port.top_window),
-						   GTK_DIALOG_MODAL,
-						   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-						   _("Revert"), GA_RESPONSE_REVERT,
-						   _("New"), GA_RESPONSE_NEW,
-						   GTK_STOCK_OK, GTK_RESPONSE_OK, NULL);
+                        GTK_WINDOW (ghid_port.top_window),
+                        GTK_DIALOG_MODAL,
+                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+                        _("Revert"), GA_RESPONSE_REVERT,
+                        _("New"), GA_RESPONSE_NEW,
+                        GTK_STOCK_OK, GTK_RESPONSE_OK, NULL);
 
   attr_table = gtk_table_new (attrs->Number, 3, 0);
 
@@ -1008,53 +1008,53 @@ ghid_attributes (char *owner, AttributeListType *attrs)
       response = gtk_dialog_run (GTK_DIALOG (attributes_dialog));
 
       if (response == GTK_RESPONSE_CANCEL)
-	break;
+    break;
 
       if (response == GTK_RESPONSE_OK)
-	{
-	  int i;
-	  /* Copy the values back */
-	  for (i=0; i<attributes_list->Number; i++)
-	    {
-	      if (attributes_list->List[i].name)
-		free (attributes_list->List[i].name);
-	      if (attributes_list->List[i].value)
-		free (attributes_list->List[i].value);
-	    }
-	  if (attributes_list->Max < attr_num_rows)
-	    {
-	      int sz = attr_num_rows * sizeof (AttributeType);
-	      if (attributes_list->List == NULL)
-		attributes_list->List = (AttributeType *) malloc (sz);
-	      else
-		attributes_list->List = (AttributeType *) realloc (attributes_list->List, sz);
-	      attributes_list->Max = attr_num_rows;
-	    }
-	  for (i=0; i<attr_num_rows; i++)
-	    {
-	      attributes_list->List[i].name = strdup (gtk_entry_get_text (GTK_ENTRY (attr_row[i].w_name)));
-	      attributes_list->List[i].value = strdup (gtk_entry_get_text (GTK_ENTRY (attr_row[i].w_value)));
-	      attributes_list->Number = attr_num_rows;
-	    }
+    {
+    int i;
+    /* Copy the values back */
+    for (i=0; i<attributes_list->Number; i++)
+        {
+        if (attributes_list->List[i].name)
+        free (attributes_list->List[i].name);
+        if (attributes_list->List[i].value)
+        free (attributes_list->List[i].value);
+        }
+    if (attributes_list->Max < attr_num_rows)
+        {
+        int sz = attr_num_rows * sizeof (AttributeType);
+        if (attributes_list->List == NULL)
+        attributes_list->List = (AttributeType *) malloc (sz);
+        else
+        attributes_list->List = (AttributeType *) realloc (attributes_list->List, sz);
+        attributes_list->Max = attr_num_rows;
+        }
+    for (i=0; i<attr_num_rows; i++)
+        {
+        attributes_list->List[i].name = strdup (gtk_entry_get_text (GTK_ENTRY (attr_row[i].w_name)));
+        attributes_list->List[i].value = strdup (gtk_entry_get_text (GTK_ENTRY (attr_row[i].w_value)));
+        attributes_list->Number = attr_num_rows;
+        }
 
-	  break;
-	}
+    break;
+    }
 
       if (response == GA_RESPONSE_REVERT)
-	{
-	  /* Revert */
-	  ghid_attributes_revert ();
-	}
+    {
+    /* Revert */
+    ghid_attributes_revert ();
+    }
 
       if (response == GA_RESPONSE_NEW)
-	{
-	  ghid_attributes_need_rows (attr_num_rows + 1); /* also bumps attr_num_rows */
+    {
+    ghid_attributes_need_rows (attr_num_rows + 1); /* also bumps attr_num_rows */
 
-	  gtk_entry_set_text (GTK_ENTRY (attr_row[attr_num_rows-1].w_name), "");
-	  gtk_entry_set_text (GTK_ENTRY (attr_row[attr_num_rows-1].w_value), "");
+    gtk_entry_set_text (GTK_ENTRY (attr_row[attr_num_rows-1].w_name), "");
+    gtk_entry_set_text (GTK_ENTRY (attr_row[attr_num_rows-1].w_value), "");
 
-	  ghid_attr_set_table_size ();
-	}
+    ghid_attr_set_table_size ();
+    }
     }
 
   gtk_widget_destroy (attributes_dialog);
@@ -1065,8 +1065,8 @@ ghid_attributes (char *owner, AttributeListType *attrs)
 /* ---------------------------------------------------------------------- */
 
 HID_DRC_GUI ghid_drc_gui = {
-  1,				/* log_drc_overview */
-  0,				/* log_drc_details */
+  1,                /* log_drc_overview */
+  0,                /* log_drc_details */
   ghid_drc_window_reset_message,
   ghid_drc_window_append_violation,
   ghid_drc_window_throw_dialog,
@@ -1075,7 +1075,7 @@ HID_DRC_GUI ghid_drc_gui = {
 extern HID_Attribute *ghid_get_export_options (int *);
 
 
-/* ------------------------------------------------------------ 
+/* ------------------------------------------------------------
  *
  * Actions specific to the GTK HID follow from here
  *
@@ -1231,33 +1231,33 @@ Load (int argc, char **argv, Coord x, Coord y)
   if (strcasecmp (function, "Netlist") == 0)
     {
       name = ghid_dialog_file_select_open (_("Load netlist file"),
-					   &current_netlist_dir,
-					   Settings.FilePath);
+                    &current_netlist_dir,
+                    Settings.FilePath);
     }
   else if (strcasecmp (function, "ElementToBuffer") == 0)
     {
       name = ghid_dialog_file_select_open (_("Load element to buffer"),
-					   &current_element_dir,
-					   Settings.LibraryTree);
+                    &current_element_dir,
+                    Settings.LibraryTree);
     }
   else if (strcasecmp (function, "LayoutToBuffer") == 0)
     {
       name = ghid_dialog_file_select_open (_("Load layout file to buffer"),
-					   &current_layout_dir,
-					   Settings.FilePath);
+                    &current_layout_dir,
+                    Settings.FilePath);
     }
   else if (strcasecmp (function, "Layout") == 0)
     {
       name = ghid_dialog_file_select_open (_("Load layout file"),
-					   &current_layout_dir,
-					   Settings.FilePath);
+                    &current_layout_dir,
+                    Settings.FilePath);
     }
 
   if (name)
     {
       if (Settings.verbose)
-      	fprintf (stderr, "%s:  Calling LoadFrom(%s, %s)\n", __FUNCTION__,
-		 function, name);
+        fprintf (stderr, "%s:  Calling LoadFrom(%s, %s)\n", __FUNCTION__,
+        function, name);
       hid_actionl ("LoadFrom", function, name, NULL);
       g_free (name);
     }
@@ -1308,32 +1308,32 @@ Save (int argc, char **argv, Coord x, Coord y)
     prompt = _("Save element as");
   else
     prompt = _("Save layout as");
-  
+
   name = ghid_dialog_file_select_save (prompt,
-				       &current_dir,
-				       PCB->Filename, Settings.FilePath);
-  
+                    &current_dir,
+                    PCB->Filename, Settings.FilePath);
+
   if (name)
     {
       if (Settings.verbose)
-	fprintf (stderr, "%s:  Calling SaveTo(%s, %s)\n", 
-		 __FUNCTION__, function, name);
-      
+    fprintf (stderr, "%s:  Calling SaveTo(%s, %s)\n",
+        __FUNCTION__, function, name);
+
       if (strcasecmp (function, "PasteBuffer") == 0)
-	hid_actionl ("PasteBuffer", "Save", name, NULL);
+    hid_actionl ("PasteBuffer", "Save", name, NULL);
       else
-	{
-	  /* 
-	   * if we got this far and the function is Layout, then
-	   * we really needed it to be a LayoutAs.  Otherwise 
-	   * ActionSaveTo() will ignore the new file name we
-	   * just obtained.
-	   */
-	  if (strcasecmp (function, "Layout") == 0)
-	    hid_actionl ("SaveTo", "LayoutAs", name, NULL);
-	  else
-	    hid_actionl ("SaveTo", function, name, NULL);
-	}
+    {
+    /*
+    * if we got this far and the function is Layout, then
+    * we really needed it to be a LayoutAs.  Otherwise
+    * ActionSaveTo() will ignore the new file name we
+    * just obtained.
+    */
+    if (strcasecmp (function, "Layout") == 0)
+        hid_actionl ("SaveTo", "LayoutAs", name, NULL);
+    else
+        hid_actionl ("SaveTo", function, name, NULL);
+    }
       g_free (name);
     }
   else
@@ -1457,7 +1457,7 @@ Print (int argc, char **argv, Coord x, Coord y)
   for (i = 0; hids[i]; i++)
     {
       if (hids[i]->printer)
-	printer = hids[i];
+    printer = hids[i];
     }
 
   if (printer == NULL)
@@ -1511,12 +1511,12 @@ PrintCalibrate (int argc, char **argv, Coord x, Coord y)
   printer->calibrate (0.0, 0.0);
 
   if (gui->attribute_dialog (printer_calibrate_attrs, 3,
-			     printer_calibrate_values,
-			     _("Printer Calibration Values"),
-			     _("Enter calibration values for your printer")))
+                printer_calibrate_values,
+                _("Printer Calibration Values"),
+                _("Enter calibration values for your printer")))
     return 1;
   printer->calibrate (printer_calibrate_values[1].real_value,
-		      printer_calibrate_values[2].real_value);
+            printer_calibrate_values[2].real_value);
   return 0;
 }
 
@@ -1952,8 +1952,8 @@ Popup (int argc, char **argv, Coord x, Coord y)
     {
       ghidgui->in_popup = TRUE;
       gtk_widget_grab_focus (ghid_port.drawing_area);
-      gtk_menu_popup (menu, NULL, NULL, NULL, NULL, 0, 
-		      gtk_get_current_event_time());
+      gtk_menu_popup (menu, NULL, NULL, NULL, NULL, 0,
+            gtk_get_current_event_time());
     }
   return 0;
 }
@@ -1978,16 +1978,16 @@ ImportGUI (int argc, char **argv, Coord x, Coord y)
     gchar *name = NULL;
     gchar sname[128];
     static gchar *current_layout_dir = NULL;
-    static int I_am_recursing = 0; 
+    static int I_am_recursing = 0;
     int rv, nsources;
 
     if (I_am_recursing)
-	return 1;
+    return 1;
 
 
     names = ghid_dialog_file_select_multiple (_("Load schematics"),
-					      &current_layout_dir,
-					      Settings.FilePath);
+                        &current_layout_dir,
+                        Settings.FilePath);
 
     nsources = 0;
     while (names != NULL)
@@ -2103,15 +2103,15 @@ hid_gtk_init ()
   tmps = g_win32_get_package_installation_directory (PACKAGE "-" VERSION, NULL);
 #define REST_OF_PATH G_DIR_SEPARATOR_S "share" G_DIR_SEPARATOR_S PACKAGE
 #define REST_OF_CACHE G_DIR_SEPARATOR_S "loaders.cache"
-  share_dir = (char *) malloc(strlen(tmps) + 
-			  strlen(REST_OF_PATH) +
-			  1);
+  share_dir = (char *) malloc(strlen(tmps) +
+            strlen(REST_OF_PATH) +
+            1);
   sprintf (share_dir, "%s%s", tmps, REST_OF_PATH);
 
   /* Point to our gdk-pixbuf loader cache.  */
   loader_cache = (char *) malloc (strlen (bindir) +
-				  strlen (REST_OF_CACHE) +
-				  1);
+                strlen (REST_OF_CACHE) +
+                1);
   sprintf (loader_cache, "%s%s", bindir, REST_OF_CACHE);
   loader_file = fopen (loader_cache, "r");
   if (loader_file)

@@ -17,6 +17,7 @@ extern "C" {
 
 void load_mouse_resource (const Resource *res);
 void do_mouse_action (int button, int mods);
+void do_key_action( int key );
 
 #ifdef __cplusplus
 }

@@ -57,6 +57,9 @@ typedef struct
   int x, y;
 } point;
 
+
+static char * textProto;
+
 /* ---------------------------------------------------------------------------
  * some local prototypes
  */
@@ -539,6 +542,17 @@ DrawAttached (void)
 {
   switch (Settings.Mode)
     {
+      case TEXT_MODE:
+          {
+    	  TextType *text = malloc(sizeof(TextType) );
+    	  text->X = Crosshair.X;
+    	  text->Y = Crosshair.Y;
+    	  text->TextString = textProto;
+    	  gui->graphics->draw_pcb_text (Output.fgGC, text, PCB->minSlk );
+	      printf( "Text\n");
+          }
+	      break;
+
     case VIA_MODE:
       {
         /* Make a dummy via structure to draw from */
@@ -598,6 +612,9 @@ DrawAttached (void)
       break;
 
     case LINE_MODE:
+        if (Crosshair.AttachedLine.State != STATE_FIRST )
+            printf("NOT FIRST STATE\n");
+
       /* draw only if starting point exists and the line has length */
       if (Crosshair.AttachedLine.State != STATE_FIRST &&
     Crosshair.AttachedLine.draw)
@@ -737,6 +754,12 @@ notify_mark_change (bool changes_complete)
 {
   if (gui->notify_mark_change)
     gui->notify_mark_change (changes_complete);
+}
+
+void
+notify_text_input( char * string )
+{
+textProto = string;
 }
 
 

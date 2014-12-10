@@ -39,6 +39,8 @@
 #endif
 
 #include "global.h"
+#include "hid.h"
+#include "hid_draw.h"
 
 #include <assert.h>
 #include <setjmp.h>
@@ -217,6 +219,7 @@ __r_dump_tree (struct rtree_node *node, int depth)
   int i, j;
   static int count;
   static double area;
+  hidGC   gc;
 
   if (depth == 0)
     {
@@ -232,12 +235,23 @@ __r_dump_tree (struct rtree_node *node, int depth)
     {
       printf ("p=0x%p node X(%d, %d) Y(%d, %d)\n", (void *) node,
               node->box.X1, node->box.X2, node->box.Y1, node->box.Y2);
+
+      gc = gui->graphics->make_gc();
+      gui->graphics->set_color( gc, "Green" );
+      gui->graphics->draw_rect( gc, node->box.X1, node->box.Y1, node->box.X2, node->box.Y2 );
+      gui->graphics->destroy_gc( gc );
     }
   else
     {
       printf ("p=0x%p leaf manage(%02x) X(%d, %d) Y(%d, %d)\n", (void *) node,
               node->flags.manage, node->box.X1, node->box.X2, node->box.Y1,
               node->box.Y2);
+
+      gc = gui->graphics->make_gc();
+      gui->graphics->set_color( gc, "Blue" );
+      gui->graphics->draw_rect( gc, node->box.X1, node->box.Y1, node->box.X2, node->box.Y2 );
+      gui->graphics->destroy_gc( gc );
+
       for (j = 0; j < M_SIZE; j++)
         {
           if (!node->u.rects[j].bptr)
@@ -558,6 +572,8 @@ r_search (rtree_t * rtree, const BoxType * query,
       if (query->X2 <= query->X1 || query->Y2 <= query->Y1)
         return 0;
 #endif
+     // __r_dump_tree (rtree->root, 5);
+
       /* check this box. If it's not touched we're done here */
       if (rtree->root->box.X1 >= query->X2 ||
           rtree->root->box.X2 <= query->X1 ||

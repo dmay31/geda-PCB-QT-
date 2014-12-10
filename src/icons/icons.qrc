@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/">
+        <file>via3.png</file>
+        <file>trace2.png</file>
+        <file>erase.png</file>
+        <file>EyeOn.png</file>
+        <file>layers.png</file>
+        <file>hole.png</file>
+        <file>erase_x.png</file>
+        <file>line.png</file>
+        <file>poly.png</file>
+        <file>via.svg</file>
+        <file>add_tracks.svg</file>
+        <file>add_zone.svg</file>
+        <file>text.svg</file>
+        <file>width_track.svg</file>
+    </qresource>
+</RCC>

@@ -200,28 +200,28 @@ AdjustTwoLine (bool way)
   if (!way)
     {
       if (abs (dx) > abs (dy))
-	{
-	  line->Point2.X = Crosshair.X - SGN (dx) * abs (dy);
-	  line->Point2.Y = line->Point1.Y;
-	}
+    {
+    line->Point2.X = Crosshair.X - SGN (dx) * abs (dy);
+    line->Point2.Y = line->Point1.Y;
+    }
       else
-	{
-	  line->Point2.X = line->Point1.X;
-	  line->Point2.Y = Crosshair.Y - SGN (dy) * abs (dx);
-	}
+    {
+    line->Point2.X = line->Point1.X;
+    line->Point2.Y = Crosshair.Y - SGN (dy) * abs (dx);
+    }
     }
   else
     {
       if (abs (dx) > abs (dy))
-	{
-	  line->Point2.X = line->Point1.X + SGN (dx) * abs (dy);
-	  line->Point2.Y = Crosshair.Y;
-	}
+    {
+    line->Point2.X = line->Point1.X + SGN (dx) * abs (dy);
+    line->Point2.Y = Crosshair.Y;
+    }
       else
-	{
-	  line->Point2.X = Crosshair.X;
-	  line->Point2.Y = line->Point1.Y + SGN (dy) * abs (dx);;
-	}
+    {
+    line->Point2.X = Crosshair.X;
+    line->Point2.Y = line->Point1.Y + SGN (dy) * abs (dx);;
+    }
     }
 }
 
@@ -282,7 +282,7 @@ drcArc_callback (const BoxType * b, void *cl)
  * adjusts the end point until there is no intersection or
  * it winds up back at the start. If way is false it checks
  * straight start, 45 end lines, otherwise it checks 45 start,
- * straight end. 
+ * straight end.
  *
  * It returns the straight-line length of the best answer, and
  * changes the position of the input point to the best answer.
@@ -335,142 +335,142 @@ drc_lines (PointType *end, bool way)
     {
       last = length;
       if (x_is_long)
-	{
-	  dx = SGN (dx) * length;
-	  dy = end->Y - line1.Point1.Y;
-	  length2 = abs (dy);
-	}
+    {
+    dx = SGN (dx) * length;
+    dy = end->Y - line1.Point1.Y;
+    length2 = abs (dy);
+    }
       else
-	{
-	  dy = SGN (dy) * length;
-	  dx = end->X - line1.Point1.X;
-	  length2 = abs (dx);
-	}
+    {
+    dy = SGN (dy) * length;
+    dx = end->X - line1.Point1.X;
+    length2 = abs (dx);
+    }
       temp2 = length2;
       f2 = 1.0;
       s2 = 0.5;
       last2 = -1;
       blocker = true;
       while (length2 != last2)
-	{
-	  if (x_is_long)
-	    dy = SGN (dy) * length2;
-	  else
-	    dx = SGN (dx) * length2;
-	  two_lines = true;
-	  if (abs (dx) > abs (dy) && x_is_long)
-	    {
-	      line1.Point2.X = line1.Point1.X +
-		(way ? SGN (dx) * abs (dy) : dx - SGN (dx) * abs (dy));
-	      line1.Point2.Y = line1.Point1.Y + (way ? dy : 0);
-	    }
-	  else if (abs (dy) >= abs (dx) && !x_is_long)
-	    {
-	      line1.Point2.X = line1.Point1.X + (way ? dx : 0);
-	      line1.Point2.Y = line1.Point1.Y +
-		(way ? SGN (dy) * abs (dx) : dy - SGN (dy) * abs (dx));
-	    }
-	  else if (x_is_long)
-	    {
-	      /* we've changed which axis is long, so only do one line */
-	      line1.Point2.X = line1.Point1.X + dx;
-	      line1.Point2.Y =
-		line1.Point1.Y + (way ? SGN (dy) * abs (dx) : 0);
-	      two_lines = false;
-	    }
-	  else
-	    {
-	      /* we've changed which axis is long, so only do one line */
-	      line1.Point2.Y = line1.Point1.Y + dy;
-	      line1.Point2.X =
-		line1.Point1.X + (way ? SGN (dx) * abs (dy) : 0);
-	      two_lines = false;
-	    }
-	  line2.Point1.X = line1.Point2.X;
-	  line2.Point1.Y = line1.Point2.Y;
-	  if (!two_lines)
-	    {
-	      line2.Point2.Y = line1.Point2.Y;
-	      line2.Point2.X = line1.Point2.X;
-	    }
-	  else
-	    {
-	      line2.Point2.X = line1.Point1.X + dx;
-	      line2.Point2.Y = line1.Point1.Y + dy;
-	    }
-	  SetLineBoundingBox (&line1);
-	  SetLineBoundingBox (&line2);
-	  last2 = length2;
-	  if (setjmp (info.env) == 0)
-	    {
-	      info.line = &line1;
-	      r_search (PCB->Data->via_tree, &line1.BoundingBox, NULL,
-			drcVia_callback, &info);
-	      r_search (PCB->Data->pin_tree, &line1.BoundingBox, NULL,
-			drcVia_callback, &info);
-	      if (info.bottom_side || info.top_side)
-		r_search (PCB->Data->pad_tree, &line1.BoundingBox, NULL,
-			  drcPad_callback, &info);
-	      if (two_lines)
-		{
-		  info.line = &line2;
-		  r_search (PCB->Data->via_tree, &line2.BoundingBox, NULL,
-			    drcVia_callback, &info);
-		  r_search (PCB->Data->pin_tree, &line2.BoundingBox, NULL,
-			    drcVia_callback, &info);
-		  if (info.bottom_side || info.top_side)
-		    r_search (PCB->Data->pad_tree, &line2.BoundingBox, NULL,
-			      drcPad_callback, &info);
-		}
-	      GROUP_LOOP (PCB->Data, group);
-	      {
-		info.line = &line1;
-		r_search (layer->line_tree, &line1.BoundingBox, NULL,
-			  drcLine_callback, &info);
-		r_search (layer->arc_tree, &line1.BoundingBox, NULL,
-			  drcArc_callback, &info);
-		if (two_lines)
-		  {
-		    info.line = &line2;
-		    r_search (layer->line_tree, &line2.BoundingBox,
-			      NULL, drcLine_callback, &info);
-		    r_search (layer->arc_tree, &line2.BoundingBox,
-			      NULL, drcArc_callback, &info);
-		  }
-	      }
-	      END_LOOP;
-	      /* no intersector! */
-	      blocker = false;
-	      f2 += s2;
-	      len = (line2.Point2.X - line1.Point1.X);
-	      len *= len;
-	      len += (double) (line2.Point2.Y - line1.Point1.Y) *
-		(line2.Point2.Y - line1.Point1.Y);
-	      if (len > best)
-		{
-		  best = len;
-		  ans.X = line2.Point2.X;
-		  ans.Y = line2.Point2.Y;
-		}
+    {
+    if (x_is_long)
+        dy = SGN (dy) * length2;
+    else
+        dx = SGN (dx) * length2;
+    two_lines = true;
+    if (abs (dx) > abs (dy) && x_is_long)
+        {
+        line1.Point2.X = line1.Point1.X +
+        (way ? SGN (dx) * abs (dy) : dx - SGN (dx) * abs (dy));
+        line1.Point2.Y = line1.Point1.Y + (way ? dy : 0);
+        }
+    else if (abs (dy) >= abs (dx) && !x_is_long)
+        {
+        line1.Point2.X = line1.Point1.X + (way ? dx : 0);
+        line1.Point2.Y = line1.Point1.Y +
+        (way ? SGN (dy) * abs (dx) : dy - SGN (dy) * abs (dx));
+        }
+    else if (x_is_long)
+        {
+        /* we've changed which axis is long, so only do one line */
+        line1.Point2.X = line1.Point1.X + dx;
+        line1.Point2.Y =
+        line1.Point1.Y + (way ? SGN (dy) * abs (dx) : 0);
+        two_lines = false;
+        }
+    else
+        {
+        /* we've changed which axis is long, so only do one line */
+        line1.Point2.Y = line1.Point1.Y + dy;
+        line1.Point2.X =
+        line1.Point1.X + (way ? SGN (dx) * abs (dy) : 0);
+        two_lines = false;
+        }
+    line2.Point1.X = line1.Point2.X;
+    line2.Point1.Y = line1.Point2.Y;
+    if (!two_lines)
+        {
+        line2.Point2.Y = line1.Point2.Y;
+        line2.Point2.X = line1.Point2.X;
+        }
+    else
+        {
+        line2.Point2.X = line1.Point1.X + dx;
+        line2.Point2.Y = line1.Point1.Y + dy;
+        }
+    SetLineBoundingBox (&line1);
+    SetLineBoundingBox (&line2);
+    last2 = length2;
+    if (setjmp (info.env) == 0)
+        {
+        info.line = &line1;
+        r_search (PCB->Data->via_tree, &line1.BoundingBox, NULL,
+            drcVia_callback, &info);
+        r_search (PCB->Data->pin_tree, &line1.BoundingBox, NULL,
+            drcVia_callback, &info);
+        if (info.bottom_side || info.top_side)
+        r_search (PCB->Data->pad_tree, &line1.BoundingBox, NULL,
+            drcPad_callback, &info);
+        if (two_lines)
+        {
+        info.line = &line2;
+        r_search (PCB->Data->via_tree, &line2.BoundingBox, NULL,
+                drcVia_callback, &info);
+        r_search (PCB->Data->pin_tree, &line2.BoundingBox, NULL,
+                drcVia_callback, &info);
+        if (info.bottom_side || info.top_side)
+            r_search (PCB->Data->pad_tree, &line2.BoundingBox, NULL,
+                drcPad_callback, &info);
+        }
+        GROUP_LOOP (PCB->Data, group);
+        {
+        info.line = &line1;
+        r_search (layer->line_tree, &line1.BoundingBox, NULL,
+            drcLine_callback, &info);
+        r_search (layer->arc_tree, &line1.BoundingBox, NULL,
+            drcArc_callback, &info);
+        if (two_lines)
+        {
+            info.line = &line2;
+            r_search (layer->line_tree, &line2.BoundingBox,
+                NULL, drcLine_callback, &info);
+            r_search (layer->arc_tree, &line2.BoundingBox,
+                NULL, drcArc_callback, &info);
+        }
+        }
+        END_LOOP;
+        /* no intersector! */
+        blocker = false;
+        f2 += s2;
+        len = (line2.Point2.X - line1.Point1.X);
+        len *= len;
+        len += (double) (line2.Point2.Y - line1.Point1.Y) *
+        (line2.Point2.Y - line1.Point1.Y);
+        if (len > best)
+        {
+        best = len;
+        ans.X = line2.Point2.X;
+        ans.Y = line2.Point2.Y;
+        }
 #if 0
-	      if (f2 > 1.0)
-		f2 = 0.5;
+        if (f2 > 1.0)
+        f2 = 0.5;
 #endif
-	    }
-	  else
-	    {
-	      /* bumped into something, back off */
-	      f2 -= s2;
-	    }
-	  s2 *= 0.5;
-	  length2 = MIN (f2 * temp2, temp2);
-	}
+        }
+    else
+        {
+        /* bumped into something, back off */
+        f2 -= s2;
+        }
+    s2 *= 0.5;
+    length2 = MIN (f2 * temp2, temp2);
+    }
       if (!blocker && ((x_is_long && line2.Point2.X - line1.Point1.X == dx)
-		       || (!x_is_long
-			   && line2.Point2.Y - line1.Point1.Y == dy)))
-	f += s;
+            || (!x_is_long
+            && line2.Point2.Y - line1.Point1.Y == dy)))
+    f += s;
       else
-	f -= s;
+    f -= s;
       s *= 0.5;
       length = MIN (f * temp, temp);
     }
@@ -504,14 +504,14 @@ EnforceLineDRC (void)
   if (XOR (r1 > r2, shift))
     {
       if (PCB->Clipping)
-	PCB->Clipping = shift ? 2 : 1;
+    PCB->Clipping = shift ? 2 : 1;
       Crosshair.X = rs.X;
       Crosshair.Y = rs.Y;
     }
   else
     {
       if (PCB->Clipping)
-	PCB->Clipping = shift ? 1 : 2;
+    PCB->Clipping = shift ? 1 : 2;
       Crosshair.X = r45.X;
       Crosshair.Y = r45.Y;
     }

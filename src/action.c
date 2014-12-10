@@ -292,6 +292,8 @@ either round or, if the octagon flag is set, octagonal.
 
 %end-doc */
 
+static char inputBuffer[255];
+
 /* ---------------------------------------------------------------------------
  * some local identifiers
  */
@@ -1395,8 +1397,13 @@ NotifyMode (void)
       {
 	char *string;
 
-	if ((string = gui->prompt_for (_("Enter text:"), "")) != NULL)
+
+
+	if (1)//((string = gui->prompt_for (_("Enter text:"), "")) != NULL)
 	  {
+		string = malloc(100);
+		sprintf( string, "%s", inputBuffer );
+		memset( inputBuffer, 0x00, sizeof(inputBuffer) );
 	    if (strlen(string) > 0)
 	      {
 		TextType *text;
@@ -2991,7 +2998,11 @@ static const char mode_syntax[] =
   "Mode(Notify|Release|Cancel|Stroke)\n"
   "Mode(Save|Restore)");
 
+static const char text_syntax[] = N_("Text()");
+
 static const char mode_help[] = N_("Change or use the tool mode.");
+
+static const char text_help[] = N_("Input text");
 
 /* %start-doc actions Mode
 
@@ -3044,6 +3055,33 @@ Restores the tool to the last saved tool.
 @end table
 
 %end-doc */
+
+static int
+ActionText( int argc, char **argv, Coord x, Coord y)
+{
+    char buffer[2];
+	char ascii = atoi(ARG (0));
+
+	if( ascii == 8 )
+	    {
+		int len = strlen( inputBuffer );
+		if( len > 0 )
+		    {
+			inputBuffer[len-1] = 0;
+		    }
+	    }
+	else
+	    {
+	    snprintf( buffer, 2,  "%s", &ascii );
+	    }
+
+	    {
+	    strcat( inputBuffer, buffer );
+        notify_text_input( inputBuffer );
+	    }
+
+	return(0);
+}
 
 static int
 ActionMode (int argc, char **argv, Coord x, Coord y)
@@ -8155,6 +8193,9 @@ HID_Action action_action_list[] = {
   ,
   {"Mode", 0, ActionMode,
    mode_help, mode_syntax}
+  ,
+  {"Text", 0, ActionText,
+   text_help, text_syntax}
   ,
   {"MorphPolygon", 0, ActionMorphPolygon,
    morphpolygon_help, morphpolygon_syntax}

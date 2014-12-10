@@ -4,7 +4,8 @@
 
 import os
 import re
-
+import shutil
+from waflib import Configure, Logs, Utils
 
 hidlist = ['qt']
 
@@ -74,21 +75,23 @@ files = [ 'src/action.c',
           'src/hid/common/hidnogui.c',
           'src/hid/common/extents.c',
           'src/hid/common/draw_helpers.c',
-          'src/hid/common/hid_resource.c'
+          'src/hid/common/hid_resource.c',
+          'src/icons/icons.qrc',
+          'src/hid/qt/Shaders/shader.qrc'
           ]
 
 def options(opt):
     opt.load('compiler_cxx')
     opt.load('compiler_c')
-    opt.load('qt4')
+    opt.load('qt5')
     opt.load('bison')
     opt.load('flex')
 
 def configure(conf):
-    conf.sub_config('src/hid/qt')
-    conf.sub_config('gts')
+    conf.recurse('src/hid/qt')
+    conf.recurse('gts')
     conf.load('gcc')
-    conf.load('qt4')
+    conf.load('qt5')
     conf.load('bison')
     conf.load('flex')
     conf.load('gnu_dirs')
@@ -108,8 +111,8 @@ def configure(conf):
     conf.define( 'HAVE_DLFCN_H', 1, quote=False )
     conf.define( 'COORD_TYPE', 'long', quote=False )
     conf.define( 'COORD_MAX', 'LONG_MAX', quote=False )
-    conf.define( 'PCB_DIR_SEPARATOR_S', os.sep)
-    conf.define( 'PCB_DIR_SEPARATOR_C', os.sep )
+    conf.define( 'PCB_DIR_SEPARATOR_C', "\'"+os.sep+"\'", quote=False )
+    conf.define( 'PCB_DIR_SEPARATOR_S', os.sep )
     conf.define( 'PCB_PATH_DELIMETER', os.pathsep )
     conf.define( 'VERSION', "1.99z" )
     conf.define( 'HAVE_MKDIR', 1 )
@@ -119,14 +122,14 @@ def configure(conf):
     conf.define( 'GNUM4', conf.env.GNUM4 )
     conf.define( 'PREFIX', conf.env.PREFIX )
     conf.define( 'LIBRARYFILENAME', 'pcblib')
-    conf.define( 'GETTEXT_PACKAGE', 'pcb')
+    conf.define( 'GETTEXT_PACKAGE', 'lib')
 
     n1 = conf.root.find_node(conf.env.BINDIR)
     n2 = conf.root.find_node(conf.env.EXEC_PREFIX)
     conf.define( 'BINDIR_TO_EXECPREFIX', n2.path_from(n1) )
 
     n1 = conf.root.find_node(conf.env.DATADIR)
-    n2 = conf.root.make_node('%s/pcb' % conf.env.DATADIR)
+    n2 = conf.root.make_node('%s/lib' % conf.env.DATADIR)
     conf.define( 'BINDIR_TO_PCBLIBDIR', n2.path_from(n1) )
 
     n2 = conf.root.make_node('%s/pcb/newlib' % conf.env.DATADIR)
@@ -192,10 +195,11 @@ def configure(conf):
 
 
 def build(bld):
-     bld.add_subdirs('src/hid/qt')
-     bld.add_subdirs('gts')
+     bld.recurse('src/hid/qt')
+     bld.recurse('gts')
 
-     b = bld.new_task_gen()
+     bld(rule='cp ${SRC} ${TGT}', source='lib/ListLibraryContents.sh.in', target='lib/ListLibraryContents.sh')
+     b = bld()
      b.env.CFLAGS += ['-std=c99']
      b.env.CFLAGS += ['-g']
      #b.env.LINKFLAGS += ['-M -Map=pcb_map.txt']
@@ -203,7 +207,8 @@ def build(bld):
      for f in files:
          b.source += f + ' '
      b.includes = '. ./src ./gts'
-     b.uselib = 'GLIB-2.0 LIBQT LIBGTS DBUS-1'
+
+     b.uselib = 'GLIB-2.0 QT5CORE QT5GUI QT5OPENGL QT5WIDGETS GL GLU DBUS-1 FREETYPE2'
      b.features='c cxxprogram'
      b.lib = 'c m dl GL'
      b.use = 'GTSLIB LIBQT'

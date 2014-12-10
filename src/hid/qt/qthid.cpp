@@ -1,4 +1,21 @@
-#include "qthid.h"
+#include "qthid.hpp"
+
+#include "assert.h"
+extern "C" {
+#include "polygon.h"
+}
+
+#include <stdlib.h>
+#include <QOpenGLBuffer>
+#include <QGLFormat>
+#include <QGLWidget>
+#include <QGLBuffer>
+
+#include "ft2build.h"
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/transform.hpp>
+
+#include FT_FREETYPE_H
 
 /*-----------------------------------------------
                        Variables
@@ -11,15 +28,47 @@ HID_DRAW QtHID::QtGraphics;
                        Functions
  ----------------------------------------------*/
 
+GuiTimer::GuiTimer()
+{
+this->pTimerObj = NULL;
+this->Callback_func = NULL;
+}
 
+GuiTimer::~GuiTimer()
+{
+printf("Timer Destroyed\n");
+}
+
+void GuiTimer::timeout()
+{
+if( this->Callback_func != NULL )
+    {
+    printf("Timer Expired\n");
+    this->Callback_func( this->user_data );
+    delete this->pTimerObj;
+    delete this;
+    }
+}
 
 /* Constructor */
 QtHID::QtHID(QWidget *Parent)
 {
+int error;
+bool err;
+
+QSizePolicy size( QSizePolicy::Expanding, QSizePolicy::Expanding );
 /* Default Zoom Level */
 ppx = 6000;
 tx = 0;
 ty = 0;
+
+BGLint = false;
+
+cntrl_pressed = false;
+shift_pressed = false;
+pbuffer = NULL;
+cube = NULL;
+geom = NULL;
 
 /* Default GL Coordinates per pixel */
 zoom = 1/ppx;
@@ -28,11 +77,21 @@ zoom = 1/ppx;
 qport.Offlimit_color = new QColor("Black");
 qport.Background_color = new QColor("Black");
 
-
 setMouseTracking(true);
 setFocusPolicy(Qt::StrongFocus);
+setGeometry(0,0,200,200);
 
 this->setContextMenuPolicy(Qt::CustomContextMenu);
+
+connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(ShowContextMenu(const QPoint &)));
+
+/* A Singleton Design pattern */
+if( NULL != QtHID::pMe )
+    {
+    delete[] QtHID::pMe;
+    }
+
+QtHID::pMe = this;
 
 }
 
@@ -43,10 +102,131 @@ delete[] qport.Offlimit_color;
 delete[] qport.Background_color;
 }
 
+/** @brief Publicly Add triangles to the OpenGL object
+ *
+ * @param 3 vertex points
+ * @return Void.
+ */
+void QtHID::ADD_triangle (float x1, float y1, float x2, float y2, float x3, float y3 )
+{
+/* Add it to the main Buffer */
+//this->check_triangle_space( &this->buffer, 1 );
+this->add_triangle( &triangleVertxBuffer, x1,y1,x2,y2,x3,y3 );
+}
+
 
 void QtHID::initializeGL()
 {
 
+bool                 err;
+int                  model, view, projection, scale, translation;
+QGLFormat glFormat = QGLWidget::format();
+float                a,b,c,d;
+GLint MaxPatchVertices = 0;
+glm::vec4            color;
+
+glFormat.setSampleBuffers( true );
+
+Projection = glm::ortho( 0.0f, (float)this->width(), (float)this->height(), 0.0f, 0.0f, 100.0f );
+Scale = glm::scale(glm::mat4(zoom), glm::vec3(zoom));
+
+initializeOpenGLFunctions();
+
+// Set OpenGL options
+glEnable (GL_COLOR_LOGIC_OP);
+glLogicOp (GL_XOR);
+
+err = Shader.addShaderFromSourceFile( QOpenGLShader::Vertex, ":/vertex.glsl" );
+err = Shader.addShaderFromSourceFile( QOpenGLShader::Fragment, ":/fragment.glsl" );
+err = Shader.link();
+
+if ( !glFormat.sampleBuffers() )
+qWarning() << "Could not enable sample buffers";
+
+// Set the clear color to black
+//glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+
+load_fonts();
+
+//VAO.create();
+//VAO.bind();
+mTrianglesVBO.create();
+mTrianglesVBO.setUsagePattern( QGLBuffer::StaticDraw );
+//if ( !mTrianglesVBO.bind() )
+{
+//qWarning() << "Could not bind vertex buffer to the context";
+//return;
+}
+//mTrianglesVBO.allocate( vertices, sizeof(vertices) );
+mTrianglesVBO.allocate( 3 * 4 * TRIANGLE_ARRAY_SIZE * sizeof(float));
+
+mVBO.create();
+mVBO.setUsagePattern( QGLBuffer::StaticDraw );
+mVBO.bind();
+if ( !mVBO.bind() )
+{
+qWarning() << "Could not bind vertex buffer2 to the context";
+return;
+}
+
+mVBO.allocate( 3 * 4 * TRIANGLE_ARRAY_SIZE * sizeof(float));
+
+mCrossHairsVBO.create();
+mCrossHairsVBO.setUsagePattern( QGLBuffer::StaticDraw );
+mCrossHairsVBO.bind();
+if ( !mCrossHairsVBO.bind() )
+{
+qWarning() << "Could not bind vertex buffer3 to the context";
+return;
+}
+
+mCrossHairsVBO.allocate( 3 * 4 * TRIANGLE_ARRAY_SIZE * sizeof(float));
+
+// Bind the shader program so that we can associate variables from
+// our application to the shaders
+if ( !Shader.bind() )
+{
+qWarning() << "Could not bind shader program to context";
+return;
+}
+Translation = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0) );
+
+translation = glGetUniformLocation( Shader.programId(), "Translation");
+glUniformMatrix4fv( translation, 1, GL_FALSE, glm::value_ptr(Translation) );
+
+model = glGetUniformLocation( Shader.programId(), "Model");
+glUniformMatrix4fv( model, 1, GL_FALSE, glm::value_ptr(Model));
+
+view = glGetUniformLocation( Shader.programId(), "View" );
+glUniformMatrix4fv( view, 1, GL_FALSE, glm::value_ptr(View));
+
+projection = glGetUniformLocation( Shader.programId(), "Projection" );
+glUniformMatrix4fv( projection, 1, GL_FALSE, glm::value_ptr(Projection));
+
+scale = glGetUniformLocation( Shader.programId(), "Scale" );
+glUniformMatrix4fv( scale, 1, GL_FALSE, glm::value_ptr(Scale));
+
+
+color = glm::vec4(1.0f, 0.5f, 1.2f,0 );
+colorIdx = glGetUniformLocation( Shader.programId(), "Color" );
+glUniform4f( colorIdx, 1.0f, 0.5f, 1.2f, 0 );
+
+// Enable the "vertex" attribute to bind it to our currently bound
+// vertex buffer.
+Shader.setAttributeBuffer( "vertex", GL_FLOAT, 0, 4 );
+Shader.enableAttributeArray( "vertex" );
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+glEnableVertexAttribArray(0);
+
+
+glGetIntegerv(GL_MAX_PATCH_VERTICES, &MaxPatchVertices);
+
+Shader.setPatchVertexCount(10);
+//VAO.release();
+
+//Shader.enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
+
+BGLint = true;
 }
 /** @brief Instantiates a new HID object and registers it
  *         with the PCB framework.
@@ -66,8 +246,11 @@ intf->parse_arguments              = parse_arguments;
 intf->logv                         = logger;
 intf->set_layer                    = stub_set_layer;
 intf->end_layer                    = stub_end_layer;
+intf->add_timer                    = add_timer;
 intf->shift_is_pressed             = shift_is_pressed;
+intf->control_is_pressed           = ctrl_is_pressed;
 intf->invalidate_lr                = invalidate_lr;
+intf->invalidate_all               = invalidate_all;
 intf->graphics                     = &QtGraphics;
 intf->graphics->make_gc            = make_gc;
 intf->graphics->destroy_gc         = destory_gc;
@@ -76,7 +259,10 @@ intf->graphics->set_line_cap       = set_line_cap;
 intf->graphics->draw_line          = draw_a_line;
 intf->graphics->draw_rect          = draw_a_rect;
 intf->graphics->draw_arc           = intf_draw_arc;
+intf->graphics->draw_pcb_text      = draw_text;
 intf->graphics->fill_circle        = intf_fill_circle;
+intf->graphics->fill_polygon       = intf_fill_polygon;
+intf->graphics->fill_rect          = intf_fill_rect;
 intf->notify_crosshair_change      = update_widget;
 intf->set_crosshair                = set_crosshair;
 intf->graphics->set_draw_xor       = set_draw_xor;
@@ -88,7 +274,37 @@ common_draw_helpers_init( intf->graphics );
 /* Store pointer to the HID object */
 QtHID::pIntf = intf;
 
-QtHID::pMe = this;
+}
+
+void QtHID::intf_fill_rect(hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2)
+{
+	//Qhid_fill_rect( x1, y1, x2, y2); //Can't call this!!
+	QtHID::pMe->ADD_triangle ( x1, y1, x1, y2, x2, y2);
+	QtHID::pMe->ADD_triangle ( x2, y1, x2, y2, x1, y1);
+}
+
+void QtHID::intf_fill_polygon(hidGC gc, int n_coords, Coord *x, Coord *y)
+{
+QtHID::set_color( gc, gc->colorname );
+Qhid_fill_polygon( n_coords, x, y, QtHID::pMe );
+}
+
+hidval QtHID::add_timer(void (*func) (hidval user_data_), unsigned long milliseconds_, hidval user_data_)
+{
+GuiTimer * Timer = new GuiTimer;
+hidval    ret;
+
+Timer->Callback_func = func;
+Timer->user_data = user_data_;
+Timer->pTimerObj = new QTimer( Timer );
+
+connect( Timer->pTimerObj, SIGNAL(timeout()), Timer, SLOT(timeout()) );
+Timer->pTimerObj->start( (int)milliseconds_ );
+
+ret.ptr = Timer;
+
+return( ret );
+
 }
 
 void QtHID::intf_draw_arc(hidGC gc, Coord cx, Coord cy, Coord xradius, Coord yradius, Angle start_angle, Angle delta_angle)
@@ -106,13 +322,23 @@ void QtHID::invalidate_lr( int left_, int right_, int top_, int bottom_ )
 {
 QRect region(left_, top_, right_ - left_, bottom_ - top_ );
 QtHID::pMe->update( region );
+}
 
+void QtHID::invalidate_all( void )
+{
+QtHID::pMe->update();
 }
 
 int QtHID::shift_is_pressed( void )
 {
-return( false );
+return( QtHID::pMe->shift_pressed );
 }
+
+int QtHID::ctrl_is_pressed( void )
+{
+return( QtHID::pMe->cntrl_pressed );
+}
+
 void QtHID::destory_gc( hidGC gc )
 {
 free( gc );
@@ -227,8 +453,9 @@ else
     Color.getRgbF( &r, &g, &b, &a );
     }
 
-QtHID::pMe->flush_triangles(&QtHID::pMe->buffer);
-glColor4d (r, g, b, a);
+QtHID::pMe->flush_triangles(&QtHID::pMe->triangleVertxBuffer);
+QtHID::pMe->setColors( r, g, b, a );
+
 } /* set_color() */
 
 /**
@@ -246,7 +473,12 @@ gc->cap = style;
 void QtHID::draw_a_line( hidGC gc, Coord x1, Coord y1, Coord x2, Coord y2 )
 {
 QtHID::set_color( gc, gc->colorname );
-QtHID::pMe->draw_line( gc->cap, gc->width, x1, y1, x2, y2, 1 );
+QtHID::pMe->draw_line( gc->cap, gc->width, x1, y1, x2, y2, QtHID::pMe->ppx );
+}
+
+void QtHID::draw_text(hidGC gc, TextType * text, Coord silkLine )
+{
+QtHID::pMe->draw_glyph( gc, text );
 }
 
 void QtHID::update_widget( bool change_complete )
@@ -261,7 +493,7 @@ QtHID::pMe->setcrosshairs( x, y);
 
 void QtHID::set_draw_xor( hidGC gc, int xor_ )
 {
-//TODO
+QtHID::pMe->setXOR( gc, xor_ );
 }
 
 /**
@@ -299,7 +531,7 @@ if (slices > MAX_TRIANGLES_PER_CAP)
     }
 
 /* Check the buffer is large enough */
-if( !check_triangle_space (&buffer, slices) )
+if( !check_triangle_space (&triangleVertxBuffer, slices) )
     {
     /* Very bad error */
     exit( 1 );
@@ -316,7 +548,7 @@ for (i = 0; i < slices; i++)
     capy = -radius * sinf (angle * M_PI / 180. + ((float)(i + 1)) * M_PI / (float)slices) + y;
 
     /* Add triangle to the buffer */
-    add_triangle (&buffer, last_capx, last_capy, capx, capy, x, y);
+    add_triangle (&triangleVertxBuffer, last_capx, last_capy, capx, capy, x, y);
 
     /* Store the last coordinate */
     last_capx = capx;
@@ -380,7 +612,7 @@ void QtHID::fill_circle (Coord vx, Coord vy, Coord vr, double scale)
   if (slices > MAX_TRIANGLES_PER_CIRCLE)
     slices = MAX_TRIANGLES_PER_CIRCLE;
 
-if( !check_triangle_space (&buffer, slices) )
+if( !check_triangle_space (&triangleVertxBuffer, slices) )
   {
   /* Very bad error */
   exit( 1 );
@@ -393,10 +625,38 @@ if( !check_triangle_space (&buffer, slices) )
     float x, y;
     x = radius * cosf (((float)(i + 1)) * 2. * M_PI / (float)slices) + vx;
     y = radius * sinf (((float)(i + 1)) * 2. * M_PI / (float)slices) + vy;
-    add_triangle (&buffer, vx, vy, last_x, last_y, x, y);
+    add_triangle (&triangleVertxBuffer, vx, vy, last_x, last_y, x, y);
     last_x = x;
     last_y = y;
   }
+}
+
+void QtHID::draw_glyph( hidGC gc, TextType * text )
+{
+
+fontmap_type letter;
+int          c;
+char *       p = text->TextString;
+glm::vec4    Point[3];
+FT_Pos       spacing = 0;
+
+
+while( p!=NULL && *p )
+    {
+	letter = fonts[ *p ];
+
+    for( c = 0; c < letter.index; c+=9 )
+        {
+    	Point[0] = glm::translate(glm::mat4(1.0f), glm::vec3(text->X + spacing, text->Y, 0) ) * glm::vec4( letter.vertices[c], letter.vertices[c+1], letter.vertices[c+2], 1.0f );
+    	Point[1] = glm::translate(glm::mat4(1.0f), glm::vec3(text->X + spacing, text->Y, 0) ) * glm::vec4( letter.vertices[c+3], letter.vertices[c+4], letter.vertices[c+5], 1.0f );
+    	Point[2] = glm::translate(glm::mat4(1.0f), glm::vec3(text->X + spacing, text->Y, 0) ) * glm::vec4( letter.vertices[c+6], letter.vertices[c+7], letter.vertices[c+8], 1.0f );
+
+    	this->add_triangle( &triangleVertxBuffer, Point[0].x, Point[0].y, Point[1].x, Point[1].y, Point[2].x, Point[2].y );
+        }
+
+    spacing += letter.advance;
+    p++;
+    }
 }
 
 #define MIN_SLICES_PER_ARC 6
@@ -443,6 +703,10 @@ int slices;
 int i;
 int hairline = 0;
 
+start_angle = 0;
+
+printf("draw arc: %d,%d\n", x, y );
+
 /* Check for hair line arc */
 if (width == 0.0)
     {
@@ -481,7 +745,7 @@ if (slices > MAX_SLICES_PER_ARC)
   slices = MAX_SLICES_PER_ARC;
 
 /* Check for room and flush if needed */
-if( !check_triangle_space (&buffer, 2 * slices) )
+if( !check_triangle_space (&triangleVertxBuffer, 2 * slices) )
     {
     /* Very bad error */
     exit( 1 );
@@ -517,11 +781,6 @@ for (i = 1; i <= slices; i++)
     outer_x = -outer_r * cos_ang + x;
     outer_y = outer_r * sin_ang + y;
 
-    if( width == scale  && i == 1)
-        {
-        printf("diff: %d\n", x);
-        }
-
     /* Triangle Layout Diagram             */
     /*    inner(x,y)                       */
     /*     ________                        */
@@ -536,14 +795,14 @@ for (i = 1; i <= slices; i++)
     /*    last_inner(x,y)_                 */
 
     /* Add lower triangle */
-    add_triangle ( &buffer,
+    add_triangle ( &triangleVertxBuffer,
                    last_inner_x, last_inner_y,
                    last_outer_x, last_outer_y,
                    outer_x, outer_y
                  );
 
     /* Add upper triangle */
-    add_triangle ( &buffer,
+    add_triangle ( &triangleVertxBuffer,
                    last_inner_x, last_inner_y,
                    inner_x, inner_y,
                    outer_x, outer_y
@@ -583,26 +842,37 @@ if( !hairline )
  */
 void QtHID::flush_triangles( triangle_buffer* buffer )
 {
-/* Don't flush if the buffer is empty! */
-if (buffer->triangle_count != 0)
-    {
-    /* Set GL state to vertex array */
-    glEnableClientState (GL_VERTEX_ARRAY);
+	if( BGLint )
+	    {
 
-    /* Point the GL system to the buffer */
-    glVertexPointer (3, GL_FLOAT, 0,buffer->triangle_array);
+		float vertices[] = {
+		     10000.5f, 110.f, 0.0f,
+		     10000.5f,    1000000.5f, 0.0f,
+		     1000000.0f,  1000000.5f, 0.0f
+		};
 
-    /* Draw the array as triangles */
-    glDrawArrays (GL_TRIANGLES, 0, buffer->triangle_count * 3);
+		if( buffer->coord_comp_count > 0)
+		{
+			printf("DALE - %d\n", buffer->coord_comp_count );
+		}
 
-    /* Disable the vertex array */
-    glDisableClientState (GL_VERTEX_ARRAY);
+        mTrianglesVBO.write( 0, buffer->triangle_array, buffer->coord_comp_count * sizeof(float) );
+		glDrawArrays(GL_TRIANGLES, 0,  buffer->triangle_count * 3 );
 
-    /* Clean up the buffer tracking variables */
-    buffer->triangle_count = 0;
-    buffer->coord_comp_count = 0;
-    }
+		/* Clean up the buffer tracking variables */
+		buffer->triangle_count = 0;
+		buffer->coord_comp_count = 0;
+
+	    }
 } /* flush_triangles() */
+
+void QtHID::setColors( double r, double b, double g, double a )
+{
+	if( BGLint )
+	    {
+	    glUniform4f( colorIdx, r, g, b, a );
+	    }
+}
 
 void QtHID::draw_line(int cap, Coord width, Coord x1, Coord y1, Coord x2, Coord y2, double scale)
 {
@@ -653,10 +923,10 @@ void QtHID::draw_line(int cap, Coord width, Coord x1, Coord y1, Coord x2, Coord 
       }
 
       //hidgl_ensure_triangle_space (&buffer, 2);
-      this->add_triangle(&buffer, x1 - wdx, y1 - wdy,
+      this->add_triangle(&triangleVertxBuffer, x1 - wdx, y1 - wdy,
                                    x2 - wdx, y2 - wdy,
                                    x2 + wdx, y2 + wdy);
-      add_triangle (&buffer, x1 - wdx, y1 - wdy,
+      add_triangle (&triangleVertxBuffer, x1 - wdx, y1 - wdy,
                                    x2 + wdx, y2 + wdy,
                                    x1 + wdx, y1 + wdy);
 
@@ -684,15 +954,19 @@ void QtHID::add_triangle_3D (triangle_buffer *buffer,
                        float x2, GLfloat y2, float z2,
                        float x3, float y3, float z3)
 {
+
   buffer->triangle_array [buffer->coord_comp_count++] = x1;
   buffer->triangle_array [buffer->coord_comp_count++] = y1;
   buffer->triangle_array [buffer->coord_comp_count++] = z1;
+  //buffer->triangle_array [buffer->coord_comp_count++] = 1;
   buffer->triangle_array [buffer->coord_comp_count++] = x2;
   buffer->triangle_array [buffer->coord_comp_count++] = y2;
   buffer->triangle_array [buffer->coord_comp_count++] = z2;
+  //buffer->triangle_array [buffer->coord_comp_count++] = 1;
   buffer->triangle_array [buffer->coord_comp_count++] = x3;
   buffer->triangle_array [buffer->coord_comp_count++] = y3;
   buffer->triangle_array [buffer->coord_comp_count++] = z3;
+  //buffer->triangle_array [buffer->coord_comp_count++] = 1;
   buffer->triangle_count++;
 }
 void QtHID::mouseMoveEvent ( QMouseEvent * e )
@@ -700,11 +974,19 @@ void QtHID::mouseMoveEvent ( QMouseEvent * e )
 bool moved;
 Coord x, y;
 
+/* Grab any key modifiers */
+shift_pressed = ( e->modifiers() & Qt::ShiftModifier ) ? TRUE : FALSE;
+cntrl_pressed = ( e->modifiers() & Qt::ShiftModifier ) ? TRUE : FALSE;
+
 /* Grab new mouse coordinates */
 x = (Coord)( ( e->x() - tx ) / zoom ) ;
 y = (Coord)( ( e->y() - ty ) / zoom );
 
+SetCrosshairRange( x - 10000000, y-10000000, PCB->MaxWidth, PCB->MaxHeight );
+
+
 /* Notify framework of change */
+AdjustAttachedObjects();
 moved = MoveCrosshairAbsolute(x, y);
 gui->notify_crosshair_change(true);
 
@@ -744,7 +1026,7 @@ zoom += zoom_change;
 ppx = 1 / zoom;
 
 /* Update the screen */
-this->updateGL();
+this->update();
 } /* wheelEvent() */
 
 void QtHID::mousePressEvent( QMouseEvent* e )
@@ -760,8 +1042,15 @@ QPoint *    point;
 
 point = NULL;
 
+QString myChar = e->text();
+do_key_action( myChar.toUtf8()[0] );
+
 switch( e->key() )
     {
+    case Qt::Key_Escape:
+        hid_parse_actions("Mode(Escape)");
+        break;
+
     case Qt::Key_Up:
         {
         point = new QPoint(qport.x, qport.y - 1);
@@ -786,6 +1075,10 @@ switch( e->key() )
         break;
         }
 
+    case Qt::Key_Insert:
+    	hid_parse_actions("LoadFrom(ElementToBuffer,'./newlib/2_pin_thru-hole_packages/1W_Carbon_Resistor')");
+    	break;
+
     default:
         break;
     }
@@ -803,21 +1096,29 @@ this->update();
 void QtHID::paintGL(void)
 {
 BoxType region;
-
+char buf[ 100 ];
+int  scale, translation;
 
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
+Projection = glm::ortho( 0.0f, (float)this->width(), (float)this->height(), 0.0f, 0.0f, 100.0f );
+Scale = glm::scale(glm::mat4(zoom), glm::vec3(zoom));
+
+glUniformMatrix4fv( glGetUniformLocation( Shader.programId(), "Projection" ), 1, GL_FALSE, glm::value_ptr(Projection));
+
 //DrawMark();
 //flush_triangles(&buffer);
-glColor3f( 1.0f, 1.0f, 1.0f );
-glMatrixMode (GL_PROJECTION);
-glLoadIdentity ();
-glOrtho (0, this->width(), this->height(), 0, 0, 100);
-glMatrixMode (GL_MODELVIEW);
+
 
 /* Scale and move the point under the cursur back to the origin spot */
-glTranslatef( tx, ty, 0.0f );
-glScalef (zoom, zoom, 0 );
+Translation = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, 0) );
+
+translation = glGetUniformLocation( Shader.programId(), "Translation");
+scale       = glGetUniformLocation( Shader.programId(), "Scale" );
+
+glUniformMatrix4fv( translation, 1, GL_FALSE, glm::value_ptr(Translation) );
+glUniformMatrix4fv( scale, 1, GL_FALSE, glm::value_ptr(Scale));
+
 
 /* Calculate the viewable region */
 region.X1 = -tx * ppx;
@@ -825,16 +1126,18 @@ region.Y1 = -ty * ppx;
 region.X2 = ( this->width() - tx ) * ppx;
 region.Y2 = ( this->height() -ty ) * ppx;
 
-/* Draw the grid */
-hidgl_draw_grid ( &region );
-
 /* Draw anything attached to the crosshairs */
 DrawAttached();
-this->flush_triangles( &buffer );
+this->flush_triangles( &triangleVertxBuffer );
+
 
 /* Draw all elements within the view */
 hid_expose_callback( this->pIntf, &region, 0);
-this->flush_triangles( &buffer );
+this->flush_triangles( &triangleVertxBuffer );
+
+setColors( 1, 0, 0, 1 );
+/* Draw the grid */
+hidgl_draw_grid ( &region );
 
 /* Draw the crosshairs */
 Drawcrosshairs();
@@ -842,42 +1145,71 @@ Drawcrosshairs();
 
 void QtHID::Drawcrosshairs(void)
 {
-double x, y, z;
+GLfloat x, y, z;
+float Glx, Gly;
 
 x = qport.x;
 y = qport.y;
-z = 0;
+z = 0.0;
+
+static GLfloat points[12];
+
+Glx = ( tx ) / zoom ;
+Gly = ( ty ) / zoom ;
+
+printf("Glx: %f  and Gly: %f \n", tx, ty );
+
+points[0] = x;
+points[1] = PCB->MaxHeight;
+points[2] = z;
+
+points[3] = x;
+points[4] = 0.0f - Gly;
+points[5] = z;
+
+points[6] = 0.0f - Glx;
+points[7] = y;
+points[8] = z;
+
+points[9] = PCB->MaxWidth;
+points[10] = y;
+points[11] = z;
 
 
-glEnable (GL_COLOR_LOGIC_OP);
-glLogicOp (GL_XOR);
+//glEnable (GL_COLOR_LOGIC_OP);
+//glLogicOp (GL_XOR);
 
 //glColor3f (cross_color.red / 65535.,
 //          cross_color.green / 65535.,
 //          cross_color.blue / 65535.);
 //glViewport (0, 0, 955, 710);
-glColor3f( 1.0f, 1.0f, 1.0f );
-glMatrixMode (GL_PROJECTION);
-glLoadIdentity ();
 
-glOrtho (0, this->width(), this->height(), 0, 0, 100);
 
-glMatrixMode (GL_MODELVIEW);
-glTranslatef (0.0f, 0.0f, -3);
-glLoadIdentity ();
+//glColor3f( 1.0f, 1.0f, 1.0f );
+//glMatrixMode (GL_PROJECTION);
+//glLoadIdentity ();
+//
+//glOrtho (0, this->width(), this->height(), 0, 0, 100);
+//
+//glMatrixMode (GL_MODELVIEW);
+//glTranslatef (0.0f, 0.0f, -3);
+//glLoadIdentity ();
+//
+//glBegin (GL_LINES);
+//
+//draw_right_cross (x, y, z);
+//
+//if (Crosshair.shape == Union_Jack_Crosshair_Shape)
+//  draw_slanted_cross (x, y, z);
+//if (Crosshair.shape == Dozen_Crosshair_Shape)
+//  draw_dozen_cross (x, y, z);
+//
+//glEnd ();
 
-glBegin (GL_LINES);
+//glDisable (GL_COLOR_LOGIC_OP);
 
-draw_right_cross (x, y, z);
-
-if (Crosshair.shape == Union_Jack_Crosshair_Shape)
-  draw_slanted_cross (x, y, z);
-if (Crosshair.shape == Dozen_Crosshair_Shape)
-  draw_dozen_cross (x, y, z);
-
-glEnd ();
-
-glDisable (GL_COLOR_LOGIC_OP);
+mCrossHairsVBO.write(0, points, 12 * sizeof (GLfloat) );
+glDrawArrays(GL_LINES, 0, 4 );
 
 }
 
@@ -885,9 +1217,29 @@ glDisable (GL_COLOR_LOGIC_OP);
 void QtHID::setcrosshairs( int x, int y )
 {
 /* Convert the OpenGL point to a qt point */
-qport.x = ( x * zoom ) + tx;
-qport.y = ( y * zoom ) + ty;
+//qport.x = ( x * zoom ) + tx;
+//qport.y = ( y * zoom ) + ty;
+qport.x = x;
+qport.y = y;
+printf("setcrosshairs(): %d, %d\n", x, y );
+}
 
+void QtHID::setXOR( hidGC gc, int xor_ )
+{
+if( !BGLint )
+	{
+	return;
+	}
+
+if( xor_)
+    {
+	glEnable (GL_COLOR_LOGIC_OP);
+	glLogicOp (GL_XOR);
+    }
+else
+    {
+	glDisable (GL_COLOR_LOGIC_OP);
+    }
 }
 
 void QtHID::draw_right_cross (float x, float y,int z)
@@ -1004,22 +1356,30 @@ void QtHID::resizeGL(int width, int height)
 
 void QtHID::hidgl_draw_grid (BoxType *drawn_area)
 {
-  static GLfloat *points = 0;
-  static int npoints = 0;
-  Coord x1, y1, x2, y2, n, i;
+  GLfloat *points = 0;
+  int w, h;
+  Coord x1, y1, x2, y2, n;
   double x, y;
 
-  if (!Settings.DrawGrid)
+ // if (!Settings.DrawGrid)
  //   return;
 
-      glEnable (GL_COLOR_LOGIC_OP);
-      glLogicOp (GL_XOR);
-      glColor3f( 1.0f, 1.0f, 1.0f );
+  if( 15 > ( PCB->Grid * zoom ) )
+      {
+	  // Too many points to be useful, don't draw grid
+	  return;
+      }
 
-  x1 = GridFit (MAX (-tx/zoom, drawn_area->X1), PCB->Grid , PCB->GridOffsetX);
-  y1 = GridFit (MAX (-ty/zoom, drawn_area->Y1), PCB->Grid , PCB->GridOffsetY);
-  x2 = GridFit (MIN (PCB->MaxWidth, drawn_area->X2), PCB->Grid , PCB->GridOffsetX);
-  y2 = GridFit (MIN (PCB->MaxHeight, drawn_area->Y2), PCB->Grid , PCB->GridOffsetY);
+  glEnable (GL_COLOR_LOGIC_OP);
+  glLogicOp (GL_XOR);
+  glColor3f( 1.0f, 1.0f, 1.0f );
+
+  x1 = GridFit( drawn_area->X1, PCB->Grid, PCB->GridOffsetX);
+  y1 = GridFit( drawn_area->Y1, PCB->Grid, PCB->GridOffsetY);
+
+
+  x2 = drawn_area->X2;
+  y2 = drawn_area->Y2;
 
   if (x1 > x2)
     {
@@ -1035,37 +1395,31 @@ void QtHID::hidgl_draw_grid (BoxType *drawn_area)
       y2 = tmp;
     }
 
-  n = (int) ((x2 - x1) / PCB->Grid + 0.5) + 1;
-  if (n > npoints)
-    {
-      npoints = n + 10;
-      points = (GLfloat*)realloc (points, npoints * 3 * sizeof (GLfloat));
-    }
 
-  glEnableClientState (GL_VERTEX_ARRAY);
-  glVertexPointer (3, GL_FLOAT, 0, points);
+  w = (int) ((x2 - x1) / PCB->Grid + 0.5) + 1;
+  h = (int) ((y2-y1) / PCB->Grid + 0.5) + 1;
+
+  points = (GLfloat*)malloc(w*h*3*sizeof(GLfloat) );
 
   n = 0;
-  for (x = x1; x <= x2; x += PCB->Grid)
-    {
-      points[3 * n + 0] = x;
-      points[3 * n + 2] = 0;
-      n++;
-    }
+
+  //Loop over each row
   for (y = y1; y <= y2; y += PCB->Grid)
     {
-      for (i = 0; i < n; i++)
-      {
-        points[3 * i + 1] = y;
-      }
-
-      glDrawArrays (GL_POINTS, 0, n);
+	 //Loop over each column in this row iteration
+	 for (x = x1; x <= x2; x += PCB->Grid)
+	    {
+	      points[3 * n + 0] = (GLfloat)x;  // x changes for each column
+	      points[3 * n + 1] = (GLfloat)y;  // y is constant for this row
+	      points[3 * n + 2] = 0;  // z is always zero
+	      n++;
+	    }
     }
+    mVBO.write( 0, points, n * 3 * sizeof (GLfloat) );
+	glDrawArrays(GL_POINTS, 0, n );
 
-
-
-  glDisableClientState (GL_VERTEX_ARRAY);
-  glDisable (GL_COLOR_LOGIC_OP);
+	glDisable (GL_COLOR_LOGIC_OP);
+	free(points);
 }
 
 Coord QtHID::GridFit (Coord x, Coord grid_spacing, Coord grid_offset)
@@ -1076,15 +1430,561 @@ Coord QtHID::GridFit (Coord x, Coord grid_spacing, Coord grid_offset)
   return x;
 }
 
-void QtHID::valueChanged(bool value)
+void QtHID::ShowContextMenu( const QPoint &pos )
 {
-  if( TRUE == value )
+QMenu contextMenu;
+QAction * pA;
+int x;
+
+for( x = 0; x < max_copper_layer; x++ )
+	{
+	pA = new QAction( PCB->Data->Layer[x].Name, this );
+	contextMenu.addAction( pA );
+	}
+
+contextMenu.exec(mapToGlobal(pos));
+}
+
+int QtHID::move_to( const FT_Vector* to, void* user )
+{
+	fontmap_type * map = (fontmap_type*)user;
+
+	if( map->contour_open )
+	    {
+		gluTessEndContour( map->tess );
+	    }
+
+	gluTessBeginContour( map->tess );
+	map->contour_open = true;
+
+	/* We consider a move_to to be a new contour */
+	map->contours[ map->contour_cnt ] = map->index;
+	map->contour_cnt++;
+	map->from = *to;
+    return(0);
+}
+
+/**
+ * @brief Line To
+ *
+ * Callback for Freetypes when decomposing a font. This function
+ * is used to draw Linear Bézier curves
+ *
+ * \to    (x,y) position for the new point, an offset from last point
+ * \user  pointer to user data which in this case is to our local
+ *        font_map type. Used to get the from location
+ *
+ * \return returns 0 if the decomposition succeeds.
+ */
+int QtHID::line_to( const FT_Vector* to, void* user )
+{
+	fontmap_type * map = (fontmap_type*)user;
+	FT_Vector first_point;
+	glm::vec4 rFirstPoint;
+	glm::vec4 rCurvePoint;
+	double t;
+	float x,y;
+
+	t = 0.0f;
+
+	// Get the starting position and scale it for the zoom level
+	first_point.x = to->x * map->zoom;
+	first_point.y = to->y * map->zoom;
+
+	// Translate back to the origin and rotate it to the correct orientation, then return to the original position
+	rFirstPoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( first_point.x, first_point.y, 0.0f, 1.0f );
+
+	//linear interpolation for a linear Bézier curve
+	for( t = 0.0f; t < 1.0f; t+=0.1f )
+	    {
+		// Get equal spaced points between start and end points
+		// Algebraically rearranged from x = (Xf-Xs)*p + Xs but no need to check for underflow
+		// See https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+		x = ( ( map->from.x * (1-t) ) + ( t * to->x ) ) * map->zoom;
+		y = ( ( map->from.y * (1-t) ) + ( t * to->y ) ) * map->zoom;
+
+		// Rotate each point to the correct orientation
+	    rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+	    // Save each point (along with start and end ) in dynamic memory array
+	    map->v_ = (double*)malloc( sizeof(double) * 3 );
+	    map->v_[0] = (double)rCurvePoint.x;
+	    map->v_[1] = (double)rCurvePoint.y;
+	    map->v_[2] = (double)0;
+
+	    // Add the point to our polygon contour for tessellation
+		gluTessVertex( map->tess, map->v_, map->v_ );
+
+		// Will save the last point as the new first point
+		// TODO: Probably only need to do this once.
+		rFirstPoint = rCurvePoint;
+	    }
+
+    // Get the last point on the line
+	// TODO: Can't this be done inside the loop!
+	t = 1;
+	x = ( map->from.x * (1-t) + t * to->x ) * map->zoom;
+	y = ( map->from.y * (1-t) + t * to->y ) * map->zoom;
+
+	rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+	map->v_ = (double*)malloc( sizeof(double) * 3 );
+
+	map->v_[0] = (double)rCurvePoint.x;
+	map->v_[1] = (double)rCurvePoint.y;
+	map->v_[2] = 0;
+
+	gluTessVertex( map->tess, map->v_, map->v_ );
+
+	map->from = *to;
+
+	//Return Success always!
+    return(0);
+}
+
+/**
+ * @brief Line To
+ *
+ * Callback for Freetypes when decomposing a font. This function
+ * is used to draw 2nd order Bézier curves
+ *
+ * \control   control point for Bezier curve
+ * \to        (x,y) position for the new point, an offset from last point
+ * \user      pointer to user data which in this case is to our local
+ *            font_map type. Used to get the from location
+ *
+ * \return returns 0 if the decomposition succeeds.
+ */
+int QtHID::conic_to( const FT_Vector* control, const FT_Vector* to, void* user )
+{
+	fontmap_type * map = (fontmap_type*)user;
+	float t;
+	float x, y;
+	float fx, fy;
+	glm::vec4 rFirstPoint;
+	glm::vec4 rCurvePoint;
+
+	// Get the starting point scaled correctly
+	fx = to->x * map->zoom;
+    fy = to->y * map->zoom;
+
+    // First the first true point rotated to the correct orientation
+    rFirstPoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( fx, fy, 0.0f, 1.0f );
+
+    // Linear interpolation of the 2nd order Bézier curve
+	for( t = 0; t < 1.0f; t+=0.1f )
+	    {
+		x = map->zoom * ( map->from.x * pow( (1-t),2 ) + control->x * 2 * (1-t) * t + to->x * pow( t,2 ) );
+		y = map->zoom * ( map->from.y * pow( (1-t),2 ) + control->y * 2 * (1-t) * t + to->y * pow( t,2 ) );
+
+        // for each point rotate it to the correct orientation
+		rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+		// Save each point (along with start and end ) in dynamic memory array
+		map->v_ = (double*)malloc( sizeof(double) * 3 );
+		map->v_[0] = (double)rCurvePoint.x;
+		map->v_[1] = (double)rCurvePoint.y;
+		map->v_[2] = 0;
+
+		// Add the point to our polygon contour for tessellation
+		gluTessVertex( map->tess, map->v_, map->v_ );
+
+	    // Get the last point on the line
+		// TODO: Can't this be done inside the loop!
+		rFirstPoint = rCurvePoint;
+	    }
+
+    // Get the last point on the line
+	// TODO: Can't this be done inside the loop!
+	t = 1;
+	x = map->zoom * ( map->from.x * pow( (1-t),2 ) + control->x * 2 * (1-t) * t + to->x * pow( t,2 ) );
+	y = map->zoom * ( map->from.y * pow( (1-t),2 ) + control->y * 2 * (1-t) * t + to->y * pow( t,2 ) );
+
+	rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+	map->v_ = (double*)malloc( sizeof(double) * 3 );
+
+	map->v_[0] = (double)rCurvePoint.x;
+	map->v_[1] = (double)rCurvePoint.y;
+	map->v_[2] = 0;
+
+	gluTessVertex( map->tess, map->v_, map->v_ );
+
+	map->from = *to;
+
+	// return success
+    return(0);
+}
+
+int QtHID::cubic_to( const FT_Vector* control1, const FT_Vector* control2, const FT_Vector* to, void* user )
+{
+
+	fontmap_type * map = (fontmap_type*)user;
+	float t;
+	float x, y;
+	float fx, fy;
+	glm::vec4 rFirstPoint;
+	glm::vec4 rCurvePoint;
+
+	// Get the starting point scaled correctly
+	fx = to->x * map->zoom;
+    fy = to->y * map->zoom;
+
+    // First the first true point rotated to the correct orientation
+    rFirstPoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( fx, fy, 0.0f, 1.0f );
+
+    // Linear interpolation of the 2nd order Bézier curve
+	for( t = 0; t < 1.0f; t+=0.1f )
+	    {
+		x = map->from.x * pow( (1-t), 3 ) + control1->x * 3 * pow( (1-t), 2 ) * t + control2->x * 3 * (1-t) * pow( t, 2 ) + to->x * pow( t,3 );
+		y = map->from.y * pow( (1-t), 3 ) + control1->y * 3 * pow( (1-t), 2 ) * t + control2->y * 3 * (1-t) * pow( t, 2 ) + to->y * pow( t,3 );
+
+        // for each point rotate it to the correct orientation
+		rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+		// Save each point (along with start and end ) in dynamic memory array
+		map->v_ = (double*)malloc( sizeof(double) * 3 );
+		map->v_[0] = (double)rCurvePoint.x;
+		map->v_[1] = (double)rCurvePoint.y;
+		map->v_[2] = 0;
+
+		// Add the point to our polygon contour for tessellation
+		gluTessVertex( map->tess, map->v_, map->v_ );
+
+	    // Get the last point on the line
+		// TODO: Can't this be done inside the loop!
+		rFirstPoint = rCurvePoint;
+	    }
+
+    // Get the last point on the line
+	// TODO: Can't this be done inside the loop!
+	t = 1;
+	x = map->from.x * pow( (1-t), 3 ) + control1->x * 3 * pow( (1-t), 2 ) * t + control2->x * 3 * (1-t) * pow( t, 2 ) + to->x * pow( t,3 );
+	y = map->from.y * pow( (1-t), 3 ) + control1->y * 3 * pow( (1-t), 2 ) * t + control2->y * 3 * (1-t) * pow( t, 2 ) + to->y * pow( t,3 );
+
+	rCurvePoint = map->MtranslateBack * map->Mrotate * map->Mtranslate * glm::vec4( x, y, 0.0f, 1.0f );
+
+	map->v_ = (double*)malloc( sizeof(double) * 3 );
+
+	map->v_[0] = (double)rCurvePoint.x;
+	map->v_[1] = (double)rCurvePoint.y;
+	map->v_[2] = 0;
+
+	gluTessVertex( map->tess, map->v_, map->v_ );
+
+	map->from = *to;
+
+	// return success
+    return(0);
+}
+
+/**
+ * @brief Load Font data
+ *
+ * Load's Font pixel data into memory. The memory is the Qmap font varaible
+ * for this class.
+ */
+void QtHID::load_fonts( void )
+{
+FT_Library ft;
+static FT_Face    face;
+FT_Outline_Funcs  functions;
+fontmap_type      fontmap;
+FT_Glyph_Metrics  metrics;
+FT_Vector         center;
+int               err;
+glm::vec3         rotation;
+glm::quat         MyQuaternion;
+
+/* Init FreeTypes */
+err = FT_Init_FreeType(&ft);
+
+/* Load a font file */
+//err = FT_New_Face( ft, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 0, &face );
+err = FT_New_Face( ft, "/usr/share/fonts/truetype/OCRA.ttf", 0, &face );
+//err = FT_New_Face( ft, "/usr/share/fonts/truetype/fonts-guru-extra/Saab.ttf", 0, &face );
+
+/* Set the Pixel size for the font loaded */
+FT_Set_Pixel_Sizes(face, 0, 128);
+
+functions.move_to = move_to;
+functions.line_to = line_to;
+functions.conic_to = conic_to;
+functions.cubic_to = cubic_to;
+
+functions.shift = 0;
+functions.delta = 0;
+
+
+// Disable byte-alignment restriction
+glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+for( GLubyte c = 0; c < 128; c++ )
     {
-    SetMode( VIA_MODE );
+	err = FT_Load_Char( face, c, FT_LOAD_RENDER);
+	if( err )
+	    {
+        printf("ERROR::FREETYPE: Failed to load Glyph");
+        continue;
+	    }
+
+	memset( &fontmap, 0, sizeof(fontmap_type) );
+	/* How do we calculate the size of vertices needed? */
+	fontmap.vertices = (float*)malloc( 8000 * sizeof( float) );
+	fontmap.zoom = this->zoom;
+	fontmap.zoom = 30;
+	metrics = face->glyph->metrics;
+	center.x = ( ( metrics.horiBearingX + metrics.width ) /2 ) * fontmap.zoom;
+	center.y = 0;//( ( metrics.height ) /2 ) * fontmap.zoom;
+	fontmap.Mrotate = glm::rotate( glm::mat4(1.0f), glm::radians(180.f), glm::vec3(1.0f, 0.0f, 0.0f) );
+	fontmap.Mtranslate = glm::translate(glm::mat4(1.0f), glm::vec3(-center.x, -center.y, 0) );
+	fontmap.MtranslateBack = glm::translate(glm::mat4(1.0f), glm::vec3(center.x, center.y, 0) );
+	fontmap.contour_open = false;
+	fontmap.advance = metrics.horiAdvance * fontmap.zoom;
+
+	fontmap.types_idx = 0;
+	memset( fontmap.types, 0, sizeof(fontmap.types) );
+	fontmap.fake_index = 0;
+
+	fontmap.tess = gluNewTess();
+	gluTessProperty( fontmap.tess, GLU_TESS_WINDING_RULE,
+	                   GLU_TESS_WINDING_POSITIVE);
+
+    gluTessCallback( fontmap.tess, GLU_TESS_VERTEX_DATA, (GLUTessCallback)vertexCallback );
+    gluTessCallback( fontmap.tess, GLU_TESS_BEGIN_DATA, (GLUTessCallback)beginCallback );
+    gluTessCallback( fontmap.tess, GLU_TESS_END_DATA, (GLUTessCallback)endCallback );
+    gluTessCallback( fontmap.tess, GLU_TESS_COMBINE_DATA, (GLUTessCallback)combineCallback );
+    gluTessCallback( fontmap.tess, GLU_TESS_ERROR, (GLUTessCallback)errorCallback );
+
+
+    gluTessBeginPolygon( fontmap.tess, &fontmap );
+
+    // Decompose each font Glyph into bezier curves
+	FT_Outline_Decompose( &face->glyph->outline, &functions, &fontmap );
+
+	if( fontmap.contour_open )
+	    {
+		gluTessEndContour( fontmap.tess );
+    	}
+
+	gluTessEndPolygon( fontmap.tess );
+
+	fontmap.contours[ fontmap.contour_cnt ] = fontmap.index;
+	fontmap.contour_cnt++;
+
+	fonts.insert( c, fontmap );
     }
-  else
+
+}
+void QtHID::errorCallback ( GLenum error_code )
+{
+printf( "%s", gluErrorString( error_code ) );
+}
+void QtHID::beginCallback ( GLenum which, fontmap_type* map )
+{
+map->types[map->types_idx].type = which;
+map->types[map->types_idx].start_idx = map->index;
+map->stashed_idx = 0;
+map->stashed_vertices = 0;
+printf( "begin() type: %d, index: %d\n", which, map->index );
+}
+void QtHID::endCallback ( fontmap_type* map )
+{
+map->types[map->types_idx].len = map->index - map->types[map->types_idx].start_idx;
+map->types_idx++;
+printf( "end() index: %d\n", map->index );
+}
+void QtHID::combineCallback ( GLdouble coords[3], GLdouble* vertex_data[4],
+				 GLfloat weight[4], void** dataOut )
+{
+    (void)vertex_data;
+    (void)weight;
+    //    std::cerr << "called combine" << std::endl;
+    double* v;
+
+    v = (double*)malloc( sizeof(double) * 3);
+    memcpy( v, coords, sizeof(double) *3 );
+
+    *dataOut = v;
+}
+void QtHID::vertexCallback ( double* vertex, fontmap_type* map  )
+{
+	if( map->types[map->types_idx].type == GL_TRIANGLE_STRIP ||
+		map->types[map->types_idx].type == GL_TRIANGLE_FAN)
+	  {
+	    if (map->stashed_vertices < 2)
+	      {
+	        map->stashed_coords[map->stashed_idx++] = vertex[0];
+	        map->stashed_coords[map->stashed_idx++] = vertex[1];
+	        map->stashed_coords[map->stashed_idx++] = vertex[2];
+	        map->stashed_vertices ++;
+	      }
+	    else
+	      {
+	    	map->vertices[ map->index++ ] = map->stashed_coords[0];
+	    	map->vertices[ map->index++ ] = map->stashed_coords[1];
+	    	map->vertices[ map->index++ ] = map->stashed_coords[2];
+	    	map->vertices[ map->index++ ] = map->stashed_coords[3];
+	    	map->vertices[ map->index++ ] = map->stashed_coords[4];
+	    	map->vertices[ map->index++ ] = map->stashed_coords[5];
+	    	map->vertices[ map->index++ ] = vertex[0];
+	    	map->vertices[ map->index++ ] = vertex[1];
+	    	map->vertices[ map->index++ ] = vertex[2];
+
+	        if (map->types[ map->types_idx].type == GL_TRIANGLE_STRIP)
+	          {
+	            /* STRIP saves the last two vertices for re-use in the next triangle */
+	        	map->stashed_coords[0] = map->stashed_coords[3];
+	        	map->stashed_coords[1] = map->stashed_coords[4];
+	        	map->stashed_coords[2] = map->stashed_coords[5];
+	          }
+
+	        /* Both FAN and STRIP save the last vertex for re-use in the next triangle */
+        	map->stashed_coords[3] = vertex[0];
+        	map->stashed_coords[4] = vertex[1];
+        	map->stashed_coords[5] = vertex[2];
+	      }
+	  }
+	else if (map->types[ map->types_idx].type == GL_TRIANGLES)
+	  {
+	        map->stashed_idx = 0;
+	        map->stashed_vertices = 0;
+	        map->vertices[ map->index++ ] = vertex[0];
+	        map->vertices[ map->index++ ] = vertex[1];
+	        map->vertices[ map->index++ ] = vertex[2];
+	  }
+}
+
+void QtHID::drawKicadFootPrint( kicadFootPrintDataType * data )
+{
+int i,b;
+item_type * item;
+item_type * citem;
+
+for( i = 0; i<data->child_idx; i++ )
     {
-    SetMode( NO_MODE );
+    item = data->children[i];
+    printf("Type is: %d\n", item->type);
+
+    if( item->type == fpline )
+        {
+    	int start_x, start_y, end_x, end_y, width, line_flags;
+    	line_flags |= CLEARLINEFLAG;
+
+    	for( b=0; b<item->child_idx; b++)
+    	    {
+    		citem = item->children[b];
+    		switch( citem->type )
+    		    {
+    		    case start:
+    		    	KICAD_pos_type * pos;
+    		    	pos = (KICAD_pos_type*)citem->data;
+
+    		    	//convert from mm to opengl units
+    		    	start_x = pos->x * 1000000;
+    		    	start_y = pos->y * 1000000;
+    		    	break;
+
+    		    case end:
+    		    	pos = (KICAD_pos_type*)citem->data;
+
+    		    	//convert from mm to opengl units
+    		    	end_x = pos->x * 1000000;
+    		    	end_y = pos->y * 1000000;
+    		    	break;
+
+    		    case KICAD_TYPE_width:
+    		    	width = *((float*)citem->data) * 1000000;
+    		    	break;
+
+    		    default:
+    		    	break;
+    		    }
+    	    }
+
+    	CreateDrawnLineOnLayer( CURRENT, start_x, start_y, end_x, end_y, width, 2 * Settings.Keepaway, MakeFlags (line_flags) );
+        }
+    else if( item->type == KICAD_TYPE_pad )
+        {
+    	KICAD_pad_type *  pad_type;
+    	int x,y,thickness,drillSize, width, heigth;
+
+    	pad_type = (KICAD_pad_type*)item->data;
+
+    	if( pad_type->pad_type == PAD_TYPE_THRUHOLE )
+    	    {
+    		for( b=0; b<item->child_idx; b++ )
+    		    {
+    			citem = item->children[b];
+    			switch( citem->type )
+    		  	    {
+    			    case at:
+    			    	KICAD_pos_type * pos;
+    			    	pos = (KICAD_pos_type*)citem->data;
+    			    	x = pos->x * 1000000;
+    			    	y = pos->y * 1000000;
+    			    	break;
+
+    			    case KICAD_TYPE_size:
+    			    	pos = (KICAD_pos_type*)citem->data;
+    			    	thickness = pos->x * 1000000;
+    			    	break;
+
+    			    case drill:
+    			    	drillSize = *((float*)citem->data) * 1000000;
+    			    	break;
+
+    			    default:
+    			    	break;
+    			    }
+    	    	}
+
+    		if( pad_type->pad_shape == PAD_SHAPE_CIRCLE )
+    		    {
+    		    CreateNewVia( PCB->Data, x, y, thickness, 2* Settings.Keepaway, 0, drillSize, NULL, MakeFlags(0) );
+    		    }
+    		else if( pad_type->pad_shape == PAD_SHAPE_RECT )
+    		    {
+    			CreateNewVia( PCB->Data, x, y, thickness, 2* Settings.Keepaway, 0, drillSize, NULL, MakeFlags(SQUAREFLAG) );
+    		    }
+    	    }
+    	else if( pad_type->pad_type == PAD_TYPE_SMD )
+    	    {
+    		for( b=0; b<item->child_idx; b++ )
+				{
+				citem = item->children[b];
+				switch( citem->type )
+					{
+					case at:
+						KICAD_pos_type * pos;
+						pos = (KICAD_pos_type*)citem->data;
+						x = pos->x * 1000000;
+						y = pos->y * 1000000;
+						break;
+
+					case KICAD_TYPE_size:
+						pos = (KICAD_pos_type*)citem->data;
+						width = pos->x * 1000000;
+						heigth = pos->y * 1000000;
+						break;
+
+					case drill:
+						drillSize = *((float*)citem->data) * 1000000;
+						break;
+
+					default:
+						break;
+					}
+				}
+    		if( pad_type->pad_shape == PAD_SHAPE_RECT )
+    		    {
+    			PolygonType * polygon;
+
+    			polygon = CreateNewPolygonFromRectangle( CURRENT, x - (width/2), y - (heigth/2), x + (width/2), y + (heigth/2), MakeFlags(0) );
+    			InitClip (PCB->Data, CURRENT, polygon);
+    		    }
+    	    }
+        }
     }
 }
 

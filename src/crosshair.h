@@ -46,6 +46,7 @@ extern "C" {
 Coord GridFit (Coord x, Coord grid_spacing, Coord grid_offset);
 void notify_crosshair_change (bool changes_complete);
 void notify_mark_change (bool changes_complete);
+void notify_text_input( char * string );
 void HideCrosshair (void);
 void RestoreCrosshair (void);
 void DrawAttached (void);

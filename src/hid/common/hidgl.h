@@ -28,7 +28,7 @@ typedef struct {
   GLfloat triangle_array [3 * 3 * TRIANGLE_ARRAY_SIZE];
   unsigned int triangle_count;
   unsigned int coord_comp_count;
-} triangle_buffer;
+} e;
 
 extern triangle_buffer buffer;
 extern float global_depth;

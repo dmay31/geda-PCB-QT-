@@ -62,5 +62,6 @@ struct hid_draw_st
   void (*thindraw_pcb_pad) (hidGC gc, PadType *pad, bool clip, bool mask);
   void (*fill_pcb_pv) (hidGC fg_gc, hidGC bg_gc, PinType *pv, bool drawHole, bool mask);
   void (*thindraw_pcb_pv) (hidGC fg_gc, hidGC bg_gc, PinType *pv, bool drawHole, bool mask);
+  void (*get_user_text)( char * text );
 
 };

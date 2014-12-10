@@ -27,12 +27,16 @@
 /* prototypes for misc routines
  */
 
-#ifndef	PCB_MISC_H
-#define	PCB_MISC_H
+#ifndef    PCB_MISC_H
+#define    PCB_MISC_H
 
 #include <stdlib.h>
 #include "global.h"
 #include "mymem.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 enum unitflags { UNIT_PERCENT = 1 };
 
@@ -92,7 +96,7 @@ void AttachForCopy (Coord, Coord);
 double GetValue (const char *, const char *, bool *);
 double GetValueEx (const char *, const char *, bool *, UnitList, const char *);
 int FileExists (const char *);
-char *Concat (const char *, ...);	/* end with NULL */
+char *Concat (const char *, ...);    /* end with NULL */
 
 char *pcb_author ();
 
@@ -117,7 +121,7 @@ FlagType MakeFlags (unsigned int);
 FlagType OldFlags (unsigned int);
 FlagType AddFlags (FlagType, unsigned int);
 FlagType MaskFlags (FlagType, unsigned int);
-#define		NoFlags() MakeFlags(0)
+#define        NoFlags() MakeFlags(0)
 
 /* Layer Group Functions */
 
@@ -166,6 +170,9 @@ void NetlistChanged (int force_unfreeze);
         #endif
 #endif
 
+#ifdef __cplusplus
+    }
+#endif
 
 #endif /* PCB_MISC_H */
 

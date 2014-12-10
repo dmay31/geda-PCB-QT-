@@ -30,6 +30,10 @@
 #ifndef	PCB_CREATE_H
 #define	PCB_CREATE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "global.h"
 
 /* TRUE during file loads, for example to allow overlapping vias.
@@ -64,5 +68,9 @@ RubberbandType * CreateNewRubberbandEntry (LayerType *, LineType *, PointType *)
 LibraryMenuType * CreateNewNet (LibraryType *, char *, char *);
 LibraryEntryType * CreateNewConnection (LibraryMenuType *, char *);
 AttributeType * CreateNewAttribute (AttributeListType *list, char *name, char *value);
+
+#ifdef __cplusplus
+ }
+#endif
 
 #endif

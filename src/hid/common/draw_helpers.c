@@ -558,7 +558,10 @@ common_fill_pcb_pv (hidGC fg_gc, hidGC bg_gc, PinType *pv, bool drawHole, bool m
       Coord r = l + w;
       Coord t = b + w;
 
-      gui->graphics->fill_rect (fg_gc, l, b, r, t);
+      if( NULL != gui->graphics->fill_rect )
+          {
+          gui->graphics->fill_rect (fg_gc, l, b, r, t);
+          }
     }
   else if (TEST_FLAG (OCTAGONFLAG, pv))
     draw_octagon_poly (fg_gc, pv->X, pv->Y, w, false);
@@ -631,7 +634,7 @@ common_draw_helpers_init (HID_DRAW *graphics)
 {
   graphics->draw_pcb_line        = common_draw_pcb_line;
   graphics->draw_pcb_arc         = common_draw_pcb_arc;
-  graphics->draw_pcb_text        = common_draw_pcb_text;
+  //graphics->draw_pcb_text        = common_draw_pcb_text;
   graphics->draw_pcb_polygon     = common_fill_pcb_polygon; /* Default is the non-GUI case */
 
   graphics->fill_pcb_polygon     = common_fill_pcb_polygon;
